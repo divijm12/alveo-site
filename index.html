@@ -13,30 +13,225 @@
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
-  :root { color-scheme: dark; --bg: #0a0a0b; --ink: #f4f4f5; --ink-2: #a1a1aa; --red: #ff2d2d;
+  /* Opening (about 2 s): haze clears -> airway draws -> dots ripple out from the bronchi -> text rises.
+     Then calm: the glow breathes at the app's urge-timer rhythm (4 s in, 6 s out) and faint wisps drift. */
+  :root { color-scheme: dark; --bg: #0a0a0b; --ink: #f4f4f5; --ink-2: #a1a1aa; --ink-3: #52525b; --red: #ff2d2d;
+    --ease: cubic-bezier(.16, 1, .3, 1);
     --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif; }
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; }
-  body { background: var(--bg); color: var(--ink); font-family: var(--font); display: grid; place-items: center;
-    padding: 24px max(20px, env(safe-area-inset-left)) 24px max(20px, env(safe-area-inset-right));
-    background-image: radial-gradient(ellipse 60% 45% at 50% 38%, rgba(255, 45, 45, .10), transparent 70%); }
-  main { text-align: center; max-width: 34rem; display: grid; justify-items: center; gap: 18px; }
-  img { width: clamp(120px, 28vw, 168px); height: auto; }
-  h1 { font-size: clamp(2.6rem, 9vw, 3.6rem); letter-spacing: -.03em; margin: 4px 0 0; font-weight: 700; }
-  p { margin: 0; color: var(--ink-2); font-size: clamp(1.05rem, 3.6vw, 1.2rem); line-height: 1.5; text-wrap: balance; }
-  .soon { color: var(--red); font-weight: 600; letter-spacing: .14em; text-transform: uppercase; font-size: .82rem;
-    border: 1px solid rgba(255, 45, 45, .45); border-radius: 999px; padding: 6px 14px; margin-top: 6px; }
-  footer { position: fixed; bottom: max(16px, env(safe-area-inset-bottom)); left: 0; right: 0; text-align: center;
-    color: #52525b; font-size: .8rem; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--font); overflow-x: hidden;
+    -webkit-font-smoothing: antialiased; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  #smoke { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .stage { position: relative; min-height: 100svh; display: grid; grid-template-rows: 1fr auto; justify-items: center; align-items: center; gap: 24px;
+    padding: 32px max(20px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left)); }
+  main { text-align: center; max-width: 34rem; display: grid; justify-items: center; gap: 16px; }
+  .mark { position: relative; width: min(clamp(170px, 40vw, 270px), 31svh * 594 / 715); aspect-ratio: 594 / 715; margin-bottom: 2px; }
+  .glow { position: absolute; inset: -45%; border-radius: 50%; pointer-events: none;
+    background: radial-gradient(closest-side, rgba(255, 45, 45, .22), rgba(255, 45, 45, .07) 55%, transparent);
+    opacity: 0; animation: glow-in 1.6s .9s var(--ease) forwards, breathe 10s 2.5s ease-in-out infinite; }
+  .logo { position: relative; width: 100%; height: 100%; display: block; overflow: visible; }
+  .logo .airway path { stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw .55s .55s ease-out forwards; }
+  .logo .dots circle { opacity: 0; transform-box: fill-box; transform-origin: center; transform: scale(.2);
+    animation: dot-in .6s var(--ease) forwards; animation-delay: calc(.85s + var(--d, 0s)); }
+  h1, p, .soon, footer { opacity: 0; animation: rise .9s var(--ease) forwards; }
+  h1 { font-size: clamp(2.6rem, 9vw, 3.6rem); letter-spacing: -.035em; margin: 6px 0 0; font-weight: 700; animation-delay: 1.35s; }
+  p { margin: 0; color: var(--ink-2); font-size: clamp(1.05rem, 3.6vw, 1.2rem); line-height: 1.5; text-wrap: balance; animation-delay: 1.5s; }
+  .soon { color: var(--red); font-weight: 600; letter-spacing: .14em; text-transform: uppercase; font-size: .78rem;
+    border: 1px solid rgba(255, 45, 45, .45); border-radius: 999px; padding: 7px 15px; margin-top: 6px; animation-delay: 1.65s; }
+  footer { text-align: center; color: var(--ink-3); font-size: .8rem; animation-delay: 2s; }
+  body { user-select: none; -webkit-user-select: none; }
+  input { user-select: text; -webkit-user-select: text; }
+  .breath circle { opacity: 0; transform-box: fill-box; transform-origin: center; }
+  form, .hint { opacity: 0; animation: rise .9s var(--ease) forwards; }
+  form { display: flex; gap: 8px; width: min(100%, 25rem); margin-top: 10px; animation-delay: 1.8s; }
+  form input { flex: 1; min-width: 0; height: 44px; padding: 0 16px; border-radius: 999px; font: inherit; font-size: .95rem;
+    color: var(--ink); background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .14); outline: none;
+    transition: border-color .2s, background .2s; }
+  form input::placeholder { color: #71717a; }
+  form input:focus { border-color: rgba(255, 45, 45, .7); background: rgba(255, 255, 255, .09); }
+  form button { height: 44px; padding: 0 20px; border-radius: 999px; border: 0; font: inherit; font-weight: 600; font-size: .95rem;
+    color: #fff; background: #e0112b; cursor: pointer; transition: background .2s, transform .15s; white-space: nowrap; }
+  form button:hover { background: #ff2d2d; } form button:active { transform: scale(.97); background: #c40c1c; }
+  form button:focus-visible, form input:focus-visible { outline: 2px solid #ff2d2d; outline-offset: 2px; }
+  .note { min-height: 1.2em; font-size: .85rem; color: var(--ink-2); margin-top: -6px; }
+  .hint { font-size: .8rem; letter-spacing: .04em; color: var(--ink-3); animation-delay: 2.4s; transition: color .4s; }
+  .hint.on { color: var(--ink-2); }
+  @media (max-width: 420px) { form { flex-direction: column; } form button { width: 100%; } }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  @keyframes dot-in { to { opacity: 1; transform: none; } }
+  @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  @keyframes glow-in { to { opacity: .55; } }
+  @keyframes breathe { 0%, 100% { transform: scale(1); opacity: .55; } 40% { transform: scale(1.12); opacity: .9; } }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; }
+    .logo .dots circle, h1, p, .soon, footer, form, .hint { opacity: 1; transform: none; }
+    .logo .airway path { stroke-dashoffset: 0; }
+    .glow { opacity: .55; }
+    #smoke { display: none; }
+  }
 </style>
 </head>
 <body>
+<canvas id="smoke" aria-hidden="true"></canvas>
+<div class="stage">
 <main>
-  <img src="logo.svg" alt="Alveo app icon: lungs drawn as red dots on black" width="168" height="168">
+  <div class="mark"><div class="glow"></div><svg class="logo" viewBox="215 160 594 715" role="img" aria-label="Alveo logo: lungs drawn as red dots">
+<defs><filter id="shadow" x="-10%" y="-10%" width="120%" height="125%"><feGaussianBlur stdDeviation="14"/></filter><linearGradient id="bk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1c1c1f"/><stop offset="1" stop-color="#050506"/></linearGradient>
+<linearGradient id="rd" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff2d2d"/><stop offset="1" stop-color="#c40c1c"/></linearGradient>
+<linearGradient id="rdbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff3a33"/><stop offset="1" stop-color="#d5101f"/></linearGradient>
+<linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".12"/><stop offset=".4" stop-color="#fff" stop-opacity="0"/></linearGradient><radialGradient id="glow" cx=".5" cy=".55" r=".5"><stop offset="0" stop-color="#ff2d2d" stop-opacity=".28"/><stop offset="1" stop-color="#ff2d2d" stop-opacity="0"/></radialGradient><linearGradient id="fadeA" gradientUnits="userSpaceOnUse" x1="0" y1="205" x2="0" y2="880"><stop offset="0" stop-color="#ff3a33"/><stop offset="1" stop-color="#d5101f"/></linearGradient><linearGradient id="fadeB" gradientUnits="userSpaceOnUse" x1="0" y1="205" x2="0" y2="880"><stop offset="0" stop-color="#ff3a33"/><stop offset="1" stop-color="#8e0a15"/></linearGradient></defs><g class="airway" fill="none" stroke="url(#fadeB)" stroke-linecap="round" stroke-linejoin="round"><path d="M512 205 V420" stroke-width="32"/><path d="M512 414 L452 478 M512 414 L572 478" stroke-width="26"/></g><g class="dots" fill="url(#fadeB)"><circle cx="386.0" cy="300.0" r="13.5"/><circle cx="422.0" cy="300.0" r="13.5"/><circle cx="602.0" cy="300.0" r="13.5"/><circle cx="638.0" cy="300.0" r="13.5"/><circle cx="368.0" cy="331.2" r="13.5"/><circle cx="404.0" cy="331.2" r="13.5"/><circle cx="440.0" cy="331.2" r="13.5"/><circle cx="584.0" cy="331.2" r="13.5"/><circle cx="620.0" cy="331.2" r="13.5"/><circle cx="656.0" cy="331.2" r="13.5"/><circle cx="350.0" cy="362.4" r="13.5"/><circle cx="386.0" cy="362.4" r="13.5"/><circle cx="422.0" cy="362.4" r="13.5"/><circle cx="458.0" cy="362.4" r="13.5"/><circle cx="566.0" cy="362.4" r="13.5"/><circle cx="602.0" cy="362.4" r="13.5"/><circle cx="638.0" cy="362.4" r="13.5"/><circle cx="674.0" cy="362.4" r="13.5"/><circle cx="332.0" cy="393.5" r="13.5"/><circle cx="368.0" cy="393.5" r="13.5"/><circle cx="404.0" cy="393.5" r="13.5"/><circle cx="440.0" cy="393.5" r="13.5"/><circle cx="476.0" cy="393.5" r="13.5"/><circle cx="548.0" cy="393.5" r="13.5"/><circle cx="584.0" cy="393.5" r="13.5"/><circle cx="620.0" cy="393.5" r="13.5"/><circle cx="656.0" cy="393.5" r="13.5"/><circle cx="692.0" cy="393.5" r="13.5"/><circle cx="314.0" cy="424.7" r="13.5"/><circle cx="350.0" cy="424.7" r="13.5"/><circle cx="386.0" cy="424.7" r="13.5"/><circle cx="422.0" cy="424.7" r="13.5"/><circle cx="458.0" cy="424.7" r="13.5"/><circle cx="494.0" cy="424.7" r="13.5"/><circle cx="530.0" cy="424.7" r="13.5"/><circle cx="566.0" cy="424.7" r="13.5"/><circle cx="602.0" cy="424.7" r="13.5"/><circle cx="638.0" cy="424.7" r="13.5"/><circle cx="674.0" cy="424.7" r="13.5"/><circle cx="710.0" cy="424.7" r="13.5"/><circle cx="296.0" cy="455.9" r="13.5"/><circle cx="332.0" cy="455.9" r="13.5"/><circle cx="368.0" cy="455.9" r="13.5"/><circle cx="404.0" cy="455.9" r="13.5"/><circle cx="440.0" cy="455.9" r="13.5"/><circle cx="476.0" cy="455.9" r="13.5"/><circle cx="548.0" cy="455.9" r="13.5"/><circle cx="584.0" cy="455.9" r="13.5"/><circle cx="620.0" cy="455.9" r="13.5"/><circle cx="656.0" cy="455.9" r="13.5"/><circle cx="692.0" cy="455.9" r="13.5"/><circle cx="728.0" cy="455.9" r="13.5"/><circle cx="278.0" cy="487.1" r="13.5"/><circle cx="314.0" cy="487.1" r="13.5"/><circle cx="350.0" cy="487.1" r="13.5"/><circle cx="386.0" cy="487.1" r="13.5"/><circle cx="422.0" cy="487.1" r="13.5"/><circle cx="458.0" cy="487.1" r="13.5"/><circle cx="494.0" cy="487.1" r="13.5"/><circle cx="530.0" cy="487.1" r="13.5"/><circle cx="566.0" cy="487.1" r="13.5"/><circle cx="602.0" cy="487.1" r="13.5"/><circle cx="638.0" cy="487.1" r="13.5"/><circle cx="674.0" cy="487.1" r="13.5"/><circle cx="710.0" cy="487.1" r="13.5"/><circle cx="746.0" cy="487.1" r="13.5"/><circle cx="260.0" cy="518.2" r="13.5"/><circle cx="296.0" cy="518.2" r="13.5"/><circle cx="332.0" cy="518.2" r="13.5"/><circle cx="368.0" cy="518.2" r="13.5"/><circle cx="404.0" cy="518.2" r="13.5"/><circle cx="440.0" cy="518.2" r="13.5"/><circle cx="476.0" cy="518.2" r="13.5"/><circle cx="548.0" cy="518.2" r="13.5"/><circle cx="584.0" cy="518.2" r="13.5"/><circle cx="620.0" cy="518.2" r="13.5"/><circle cx="656.0" cy="518.2" r="13.5"/><circle cx="692.0" cy="518.2" r="13.5"/><circle cx="728.0" cy="518.2" r="13.5"/><circle cx="764.0" cy="518.2" r="13.5"/><circle cx="278.0" cy="549.4" r="13.0"/><circle cx="314.0" cy="549.4" r="13.0"/><circle cx="350.0" cy="549.4" r="13.0"/><circle cx="386.0" cy="549.4" r="13.0"/><circle cx="422.0" cy="549.4" r="13.0"/><circle cx="458.0" cy="549.4" r="13.0"/><circle cx="494.0" cy="549.4" r="13.0"/><circle cx="530.0" cy="549.4" r="13.0"/><circle cx="566.0" cy="549.4" r="13.0"/><circle cx="602.0" cy="549.4" r="13.0"/><circle cx="638.0" cy="549.4" r="13.0"/><circle cx="674.0" cy="549.4" r="13.0"/><circle cx="710.0" cy="549.4" r="13.0"/><circle cx="746.0" cy="549.4" r="13.0"/><circle cx="260.0" cy="580.6" r="12.4"/><circle cx="296.0" cy="580.6" r="12.4"/><circle cx="332.0" cy="580.6" r="12.4"/><circle cx="368.0" cy="580.6" r="12.4"/><circle cx="404.0" cy="580.6" r="12.4"/><circle cx="440.0" cy="580.6" r="12.4"/><circle cx="476.0" cy="580.6" r="12.4"/><circle cx="548.0" cy="580.6" r="12.4"/><circle cx="584.0" cy="580.6" r="12.4"/><circle cx="620.0" cy="580.6" r="12.4"/><circle cx="656.0" cy="580.6" r="12.4"/><circle cx="692.0" cy="580.6" r="12.4"/><circle cx="728.0" cy="580.6" r="12.4"/><circle cx="764.0" cy="580.6" r="12.4"/><circle cx="242.0" cy="611.8" r="11.9"/><circle cx="278.0" cy="611.8" r="11.9"/><circle cx="314.0" cy="611.8" r="11.9"/><circle cx="350.0" cy="611.8" r="11.9"/><circle cx="386.0" cy="611.8" r="11.9"/><circle cx="422.0" cy="611.8" r="11.9"/><circle cx="458.0" cy="611.8" r="11.9"/><circle cx="566.0" cy="611.8" r="11.9"/><circle cx="602.0" cy="611.8" r="11.9"/><circle cx="638.0" cy="611.8" r="11.9"/><circle cx="674.0" cy="611.8" r="11.9"/><circle cx="710.0" cy="611.8" r="11.9"/><circle cx="746.0" cy="611.8" r="11.9"/><circle cx="782.0" cy="611.8" r="11.9"/><circle cx="260.0" cy="642.9" r="11.3"/><circle cx="296.0" cy="642.9" r="11.3"/><circle cx="332.0" cy="642.9" r="11.3"/><circle cx="368.0" cy="642.9" r="11.3"/><circle cx="404.0" cy="642.9" r="11.3"/><circle cx="440.0" cy="642.9" r="11.3"/><circle cx="476.0" cy="642.9" r="11.3"/><circle cx="548.0" cy="642.9" r="11.3"/><circle cx="584.0" cy="642.9" r="11.3"/><circle cx="620.0" cy="642.9" r="11.3"/><circle cx="656.0" cy="642.9" r="11.3"/><circle cx="692.0" cy="642.9" r="11.3"/><circle cx="728.0" cy="642.9" r="11.3"/><circle cx="764.0" cy="642.9" r="11.3"/><circle cx="242.0" cy="674.1" r="10.8"/><circle cx="278.0" cy="674.1" r="10.8"/><circle cx="314.0" cy="674.1" r="10.8"/><circle cx="350.0" cy="674.1" r="10.8"/><circle cx="386.0" cy="674.1" r="10.8"/><circle cx="422.0" cy="674.1" r="10.8"/><circle cx="458.0" cy="674.1" r="10.8"/><circle cx="566.0" cy="674.1" r="10.8"/><circle cx="602.0" cy="674.1" r="10.8"/><circle cx="638.0" cy="674.1" r="10.8"/><circle cx="674.0" cy="674.1" r="10.8"/><circle cx="710.0" cy="674.1" r="10.8"/><circle cx="746.0" cy="674.1" r="10.8"/><circle cx="782.0" cy="674.1" r="10.8"/><circle cx="260.0" cy="705.3" r="10.2"/><circle cx="296.0" cy="705.3" r="10.2"/><circle cx="332.0" cy="705.3" r="10.2"/><circle cx="368.0" cy="705.3" r="10.2"/><circle cx="404.0" cy="705.3" r="10.2"/><circle cx="440.0" cy="705.3" r="10.2"/><circle cx="476.0" cy="705.3" r="10.2"/><circle cx="548.0" cy="705.3" r="10.2"/><circle cx="584.0" cy="705.3" r="10.2"/><circle cx="620.0" cy="705.3" r="10.2"/><circle cx="656.0" cy="705.3" r="10.2"/><circle cx="692.0" cy="705.3" r="10.2"/><circle cx="728.0" cy="705.3" r="10.2"/><circle cx="764.0" cy="705.3" r="10.2"/><circle cx="278.0" cy="736.5" r="9.7"/><circle cx="314.0" cy="736.5" r="9.7"/><circle cx="350.0" cy="736.5" r="9.7"/><circle cx="386.0" cy="736.5" r="9.7"/><circle cx="422.0" cy="736.5" r="9.7"/><circle cx="458.0" cy="736.5" r="9.7"/><circle cx="566.0" cy="736.5" r="9.7"/><circle cx="602.0" cy="736.5" r="9.7"/><circle cx="638.0" cy="736.5" r="9.7"/><circle cx="674.0" cy="736.5" r="9.7"/><circle cx="710.0" cy="736.5" r="9.7"/><circle cx="746.0" cy="736.5" r="9.7"/><circle cx="260.0" cy="767.6" r="9.1"/><circle cx="296.0" cy="767.6" r="9.1"/><circle cx="332.0" cy="767.6" r="9.1"/><circle cx="368.0" cy="767.6" r="9.1"/><circle cx="404.0" cy="767.6" r="9.1"/><circle cx="440.0" cy="767.6" r="9.1"/><circle cx="476.0" cy="767.6" r="9.1"/><circle cx="548.0" cy="767.6" r="9.1"/><circle cx="584.0" cy="767.6" r="9.1"/><circle cx="620.0" cy="767.6" r="9.1"/><circle cx="656.0" cy="767.6" r="9.1"/><circle cx="692.0" cy="767.6" r="9.1"/><circle cx="728.0" cy="767.6" r="9.1"/><circle cx="764.0" cy="767.6" r="9.1"/><circle cx="278.0" cy="798.8" r="8.6"/><circle cx="314.0" cy="798.8" r="8.6"/><circle cx="350.0" cy="798.8" r="8.6"/><circle cx="386.0" cy="798.8" r="8.6"/><circle cx="422.0" cy="798.8" r="8.6"/><circle cx="458.0" cy="798.8" r="8.6"/><circle cx="566.0" cy="798.8" r="8.6"/><circle cx="602.0" cy="798.8" r="8.6"/><circle cx="638.0" cy="798.8" r="8.6"/><circle cx="674.0" cy="798.8" r="8.6"/><circle cx="710.0" cy="798.8" r="8.6"/><circle cx="746.0" cy="798.8" r="8.6"/><circle cx="296.0" cy="830.0" r="8.0"/><circle cx="332.0" cy="830.0" r="8.0"/><circle cx="368.0" cy="830.0" r="8.0"/><circle cx="404.0" cy="830.0" r="8.0"/><circle cx="440.0" cy="830.0" r="8.0"/><circle cx="584.0" cy="830.0" r="8.0"/><circle cx="620.0" cy="830.0" r="8.0"/><circle cx="656.0" cy="830.0" r="8.0"/><circle cx="692.0" cy="830.0" r="8.0"/><circle cx="728.0" cy="830.0" r="8.0"/></g></svg></div>
   <h1>Alveo</h1>
   <p>An app that notices when you vape at your desk and helps you cut down, and possibly quit.</p>
   <span class="soon">Coming soon to Mac and Windows</span>
+  <div class="hint" id="hint">Press and hold anywhere to take a breath</div>
 </main>
 <footer>© 2026 Alveo</footer>
+</div>
+<script>
+(() => {
+  // Dots ripple outward from where the airway splits (512, 414 in logo units).
+  for (const c of document.querySelectorAll(".logo .dots circle")) {
+    const d = Math.hypot(c.cx.baseVal.value - 512, c.cy.baseVal.value - 414);
+    c.style.setProperty("--d", (d / 470 * 0.55).toFixed(3) + "s");
+  }
+  for (const p of document.querySelectorAll(".logo .airway path")) p.setAttribute("pathLength", "1");
+
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // ---------- Signup (not connected yet: the provider is chosen later) ----------
+  const form = document.getElementById("notify"), note = document.getElementById("note"), email = document.getElementById("email");
+  if (form) form.addEventListener("submit", e => {
+    e.preventDefault();
+    if (!email.checkValidity()) { note.textContent = "Please enter a valid email address."; email.focus(); return; }
+    note.textContent = "Preview only: sign-ups aren't connected yet.";
+  });
+
+  // ---------- Hold to breathe: in for 4 s, out for 6 s (the app's urge-timer rhythm) ----------
+  const svg = document.querySelector(".logo"), dotsG = svg.querySelector(".dots");
+  const lit = dotsG.cloneNode(true); lit.setAttribute("class", "breath"); lit.setAttribute("fill", "#ffc2b8");
+  dotsG.after(lit);
+  const litDots = [...lit.querySelectorAll("circle")];
+  const ys = litDots.map(c => c.cy.baseVal.value), top = Math.min(...ys), bot = Math.max(...ys);
+  const up = litDots.map(c => 1 - (c.cy.baseVal.value - top) / (bot - top));   // 0 = bottom, 1 = top
+  const glow = document.querySelector(".glow"), hint = document.getElementById("hint");
+  let breath = 0, holding = false, exhale = 0;
+  const HINT = "Press and hold anywhere to take a breath";
+  const interactive = el => el.closest("form, a, button, input");
+  addEventListener("pointerdown", e => { if (!interactive(e.target)) holding = true; });
+  ["pointerup", "pointercancel", "blur"].forEach(ev => addEventListener(ev, () => holding = false));
+  addEventListener("keydown", e => { if (e.code === "Space" && !interactive(document.activeElement || document.body)) { holding = true; e.preventDefault(); } });
+  addEventListener("keyup", e => { if (e.code === "Space") holding = false; });
+  function breathe(dt) {
+    const before = breath;
+    breath = holding ? Math.min(1, breath + dt / 4) : Math.max(0, breath - dt / 6);
+    exhale = !holding && before > breath ? (before - breath) / dt : 0;     // how fast we're breathing out
+    for (let i = 0; i < litDots.length; i++) {
+      const b = Math.max(0, Math.min(1, (breath * 1.25 - up[i]) * 4));
+      litDots[i].style.opacity = (b * .8).toFixed(3);
+      litDots[i].style.transform = `scale(${(1 + b * .18).toFixed(3)})`;
+    }
+    glow.style.filter = `brightness(${(1 + breath * 1.4).toFixed(3)})`;
+    const msg = holding ? (breath >= 1 ? "Now let go" : "Breathe in") : breath > .02 ? "Breathe out" : HINT;
+    if (hint.textContent !== msg) hint.textContent = msg;
+    hint.classList.toggle("on", msg !== HINT);
+  }
+
+  // ---------- Smoke: fills the screen, keeps away from the cursor, refills behind it ----------
+  const cv = document.getElementById("smoke"), ctx = cv.getContext("2d");
+  let W = 0, H = 0, dpr = 1;
+  const resize = () => { dpr = Math.min(devicePixelRatio || 1, 1.5); W = innerWidth; H = innerHeight;
+    cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); };
+  addEventListener("resize", resize); resize();
+
+  function sprite(seed, tint) {
+    const N = 160, s = document.createElement("canvas"); s.width = s.height = N;
+    const g = s.getContext("2d"), img = g.createImageData(N, N);
+    let r = seed; const rnd = () => (r = (r * 16807) % 2147483647) / 2147483647;
+    const grid = []; for (let o = 0; o < 3; o++) { const n = 4 << o, a = []; for (let i = 0; i < (n + 1) * (n + 1); i++) a.push(rnd()); grid.push([n, a]); }
+    const sm = t => t * t * (3 - 2 * t);
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+      let v = 0, amp = .55;
+      for (const [n, a] of grid) {
+        const fx = x / N * n, fy = y / N * n, ix = fx | 0, iy = fy | 0, tx = sm(fx - ix), ty = sm(fy - iy), k = n + 1;
+        const t0 = a[iy * k + ix] * (1 - tx) + a[iy * k + ix + 1] * tx, b0 = a[(iy + 1) * k + ix] * (1 - tx) + a[(iy + 1) * k + ix + 1] * tx;
+        v += (t0 * (1 - ty) + b0 * ty) * amp; amp *= .5;
+      }
+      const f = Math.max(0, 1 - Math.hypot(x / N - .5, y / N - .5) * 2), al = Math.max(0, v - .25) * f * f * 1.6, i = (y * N + x) * 4;
+      img.data[i] = tint[0]; img.data[i + 1] = tint[1]; img.data[i + 2] = tint[2]; img.data[i + 3] = Math.min(255, al * 255);
+    }
+    g.putImageData(img, 0, 0); return s;
+  }
+  const grey = [232, 232, 236], sprites = [sprite(7, grey), sprite(91, grey), sprite(313, grey), sprite(57, [255, 120, 110])];
+  const rand = (a, b) => a + Math.random() * (b - a), pick = () => sprites[(Math.random() * 3) | 0];
+
+  const parts = [];
+  function field(p) {   // a persistent smoke puff with a drifting "home" it springs back to
+    p = p || {};
+    const x = p.x ?? rand(-100, W + 100), y = p.y ?? rand(-100, H + 100);
+    return Object.assign({ x, y, hx: x, hy: y, vx: 0, vy: 0, rise: rand(5, 13), sway: rand(0, 6.28), size: rand(300, 520),
+      rot: rand(0, 6.28), vr: rand(-.05, .05), a: rand(.05, .085), img: Math.random() < .08 ? sprites[3] : pick(), life: Infinity, age: 0 }, p);
+  }
+  const target = () => Math.round(Math.max(70, Math.min(170, W * H / 7000)));
+  for (let i = 0; i < target(); i++) parts.push(field());
+  // Opening haze around the logo: lifts and clears in ~4 s.
+  const cy0 = H * .4;
+  for (let i = 0; i < 30; i++) {
+    const ang = rand(0, 6.28), rad = rand(0, Math.min(W, H) * .45);
+    parts.push(field({ x: W / 2 + Math.cos(ang) * rad, y: cy0 + Math.sin(ang) * rad * .7, size: rand(320, 600), a: rand(.2, .32),
+      rise: rand(25, 55), life: rand(3, 4.6), img: i % 7 === 0 ? sprites[3] : pick() }));
+  }
+
+  const mouse = { x: -1e4, y: -1e4, vx: 0, vy: 0, on: false, t: 0 };
+  addEventListener("pointermove", e => {
+    const now = performance.now(), dt = Math.max(1, now - mouse.t) / 1000;
+    if (mouse.on) { mouse.vx = (e.clientX - mouse.x) / dt; mouse.vy = (e.clientY - mouse.y) / dt; }
+    mouse.x = e.clientX; mouse.y = e.clientY; mouse.on = true; mouse.t = now;
+  });
+  document.documentElement.addEventListener("pointerleave", () => { mouse.on = false; mouse.x = mouse.y = -1e4; });
+
+  const R = 260, PUSH = 3200, SPRING = 1.0, DAMP = 2.4;
+  let last = performance.now(), t = 0, running = true;
+  document.addEventListener("visibilitychange", () => { running = !document.hidden; last = performance.now(); if (running) requestAnimationFrame(frame); });
+  function frame(now) {
+    if (!running) return;
+    const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
+    breathe(dt);
+    mouse.vx *= Math.exp(-6 * dt); mouse.vy *= Math.exp(-6 * dt);
+    const lungX = W / 2, lungY = svg.getBoundingClientRect().top + svg.getBoundingClientRect().height * .5;
+    const intro = 1 + 1.6 * (1 - Math.min(1, t / 3));            // field starts a little thicker
+    ctx.clearRect(0, 0, W, H);
+    for (let i = parts.length - 1; i >= 0; i--) {
+      const p = parts[i]; p.age += dt;
+      if (p.age >= p.life) { parts.splice(i, 1); continue; }
+      // home drifts up with a gentle sway; wraps to the bottom when it leaves the top
+      p.sway += dt * .3; p.hx += Math.sin(p.sway) * 6 * dt; p.hy -= p.rise * dt;
+      if (p.life === Infinity && p.hy < -p.size * .6) { p.hy += H + p.size * 1.2; p.y += H + p.size * 1.2; p.hx = p.x = rand(-100, W + 100); }
+      let ax = (p.hx - p.x) * SPRING, ay = (p.hy - p.y) * SPRING;
+      const dx = p.x - mouse.x, dy = p.y - mouse.y, d = Math.hypot(dx, dy);
+      if (d < R && d > .1) {
+        const f = (1 - d / R) ** 2 * PUSH;
+        ax += dx / d * f - dy / d * f * .35; ay += dy / d * f + dx / d * f * .35;     // push out + a little swirl
+        p.vx += mouse.vx * (1 - d / R) * .02; p.vy += mouse.vy * (1 - d / R) * .02;   // drag along with the cursor
+      }
+      if (exhale > 0) {                                                              // breathing out clears the air
+        const ex = p.x - lungX, ey = p.y - lungY, e = Math.hypot(ex, ey) || 1, f = exhale * 900 * Math.max(0, 1 - e / (Math.max(W, H) * .7));
+        ax += ex / e * f; ay += ey / e * f;
+      }
+      p.vx = (p.vx + ax * dt) * Math.exp(-DAMP * dt); p.vy = (p.vy + ay * dt) * Math.exp(-DAMP * dt);
+      p.x += p.vx * dt; p.y += p.vy * dt; p.rot += p.vr * dt;
+      if (p.life !== Infinity) { p.size += 70 * dt; p.y -= p.rise * dt; }
+      const k = p.life === Infinity ? 0 : p.age / p.life;
+      const fade = Math.min(1, p.age / .6) * (1 - k) * (1 - k) * (p.life === Infinity ? intro : 1);
+      ctx.globalAlpha = Math.min(1, p.a * fade);
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.drawImage(p.img, -p.size / 2, -p.size / 2, p.size, p.size); ctx.restore();
+    }
+    requestAnimationFrame(frame);
+  }
+  if (reduce) { cv.style.display = "none"; const loop = n => { breathe(Math.min(.05, (n - last) / 1000)); last = n; requestAnimationFrame(loop); }; requestAnimationFrame(loop); }
+  else requestAnimationFrame(frame);
+})();
+</script>
 </body>
 </html>
