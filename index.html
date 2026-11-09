@@ -134,7 +134,7 @@
     }
     glow.style.filter = `brightness(${(1 + breath * 1.4).toFixed(3)})`;
     const ease = breath * breath * (3 - 2 * breath);                      // ease in-out, like a real breath
-    svg.style.transform = `scale(${(1 + ease * .08).toFixed(4)})`;         // lungs expand up to 8% and settle back
+    svg.style.transform = `scale(${(1 + ease * .18).toFixed(4)})`;         // lungs expand up to 18% and settle back
     const msg = holding ? (breath >= 1 ? "Now let go" : "Breathe in") : breath > .02 ? "Breathe out" : HINT;
     if (hint.textContent !== msg) hint.textContent = msg;
     hint.classList.toggle("on", msg !== HINT);
