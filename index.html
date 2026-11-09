@@ -171,9 +171,9 @@
     p = p || {};
     const x = p.x ?? rand(-100, W + 100), y = p.y ?? rand(-100, H + 100);
     return Object.assign({ x, y, hx: x, hy: y, vx: 0, vy: 0, rise: rand(5, 13), sway: rand(0, 6.28), size: rand(300, 520),
-      rot: rand(0, 6.28), vr: rand(-.05, .05), a: rand(.05, .085), img: Math.random() < .08 ? sprites[3] : pick(), life: Infinity, age: 0 }, p);
+      rot: rand(0, 6.28), vr: rand(-.05, .05), a: rand(.068, .11), img: Math.random() < .08 ? sprites[3] : pick(), life: Infinity, age: 0 }, p);
   }
-  const target = () => Math.round(Math.max(70, Math.min(170, W * H / 7000)));
+  const target = () => Math.round(Math.max(70, Math.min(195, W * H / 6000)));
   for (let i = 0; i < target(); i++) parts.push(field());
   // Opening haze around the logo: lifts and clears in ~4 s.
   const cy0 = H * .4;
