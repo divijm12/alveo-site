@@ -1,0 +1,18 @@
+# Free Supabase projects pause after a quiet week; one tiny call a day keeps the waitlist database awake.
+# The URL and publishable key are public (they're in index.html too). public.ping() just returns 1.
+name: Keep waitlist database awake
+on:
+  schedule:
+    - cron: "17 14 * * *"      # daily, 14:17 UTC
+  workflow_dispatch:
+permissions: {}                  # needs no access to this repo
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Ping Supabase
+        run: |
+          curl -fsS -X POST "https://qqmkclmopqyypxifezca.supabase.co/rest/v1/rpc/ping" \
+            -H "apikey: sb_publishable_MnBSSqGJj6A3i-SoFtlRBg_y01qONHP" \
+            -H "Content-Type: application/json" -d '{}'

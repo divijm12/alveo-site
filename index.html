@@ -66,7 +66,10 @@
     color: #fff; background: #e0112b; cursor: pointer; transition: background .2s, transform .15s; white-space: nowrap; }
   form button:hover { background: #ff2d2d; } form button:active { transform: scale(.97); background: #c40c1c; }
   form button:focus-visible, form input:focus-visible { outline: 2px solid #ff2d2d; outline-offset: 2px; }
-  .note { min-height: 1.2em; font-size: .85rem; color: var(--ink-2); margin-top: -6px; }
+  .note { min-height: 1.2em; font-size: .8rem; color: var(--ink-3); margin-top: -6px; transition: color .3s; }
+  .note.ok { color: var(--ink); font-size: .95rem; } .note.err { color: #ff6b6b; }
+  .trap { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+  form button:disabled { opacity: .6; cursor: default; }
   .hint { font-size: .8rem; letter-spacing: .04em; color: var(--ink-3); animation-delay: 2.4s; transition: color .4s; }
   .hint.on { color: var(--ink-2); }
   @media (max-width: 420px) { form { flex-direction: column; } form button { width: 100%; } }
@@ -96,6 +99,13 @@
   <h1 aria-label="Alveo">ALVEO<span class="dot" aria-hidden="true">.</span></h1>
   <p>An app that notices when you vape at your desk and helps you cut down, and possibly quit.</p>
   <span class="soon">Coming soon to Mac and Windows</span>
+  <form id="notify" novalidate>
+    <label for="email" class="sr">Email address</label>
+    <input id="email" name="email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com" required>
+    <input class="trap" name="company" tabindex="-1" autocomplete="off" aria-hidden="true">
+    <button type="submit" id="notify-btn">Notify me</button>
+  </form>
+  <div class="note" id="note" role="status" aria-live="polite">Only used to tell you when Alveo launches. Unsubscribe anytime.</div>
   <div class="hint" id="hint">Press and hold anywhere to take a breath</div>
 </main>
 <footer>© 2026 Alveo</footer>
@@ -111,12 +121,26 @@
 
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  // ---------- Signup (not connected yet: the provider is chosen later) ----------
+  // ---------- Signup: straight into the Alveo Supabase waitlist (insert-only for visitors; nobody can read it from here) ----------
+  const WAITLIST = "https://qqmkclmopqyypxifezca.supabase.co/rest/v1/waitlist";
+  const PUBLIC_KEY = "sb_publishable_MnBSSqGJj6A3i-SoFtlRBg_y01qONHP";        // publishable key: meant to be public
   const form = document.getElementById("notify"), note = document.getElementById("note"), email = document.getElementById("email");
-  if (form) form.addEventListener("submit", e => {
+  const btn = document.getElementById("notify-btn"), loadedAt = Date.now();
+  const say = (text, cls) => { note.textContent = text; note.className = "note " + (cls || ""); };
+  if (form) form.addEventListener("submit", async e => {
     e.preventDefault();
-    if (!email.checkValidity()) { note.textContent = "Please enter a valid email address."; email.focus(); return; }
-    note.textContent = "Preview only: sign-ups aren't connected yet.";
+    if (!email.checkValidity()) { say("Please enter a valid email address.", "err"); email.focus(); return; }
+    const done = () => { form.remove(); say("You're on the list. We'll email you when Alveo launches.", "ok"); };
+    if (form.company.value || Date.now() - loadedAt < 1200) return done();     // bot traps: hidden field, instant submit
+    btn.disabled = true; btn.textContent = "Adding…";
+    try {
+      const r = await fetch(WAITLIST, { method: "POST",
+        headers: { apikey: PUBLIC_KEY, "Content-Type": "application/json", Prefer: "return=minimal" },
+        body: JSON.stringify({ email: email.value.trim(), source: "site" }) });
+      if (r.status === 201 || r.status === 409) return done();                  // 409 = already on the list: same answer
+      say(r.status === 400 ? "That email address doesn't look right. Please check it." : "Something went wrong. Please try again.", "err");
+    } catch { say("Couldn't reach the server. Check your connection and try again.", "err"); }
+    btn.disabled = false; btn.textContent = "Notify me";
   });
 
   // ---------- Hold to breathe: in for 4 s, out for 6 s (the app's urge-timer rhythm) ----------
