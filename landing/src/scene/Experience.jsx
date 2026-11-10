@@ -161,6 +161,7 @@ function Director() {
   };
 
   const look = useMemo(() => new THREE.Vector3(), []);
+  const corner = useMemo(() => new THREE.Vector3(), []), lastConf = useRef(0);
   if (import.meta.env.DEV) window.__alveo = { camera, C, V, simRef, shake };
   useFrame((state, rawDt) => {
     const dt = Math.min(rawDt, 0.05), t = state.clock.elapsedTime;
@@ -185,6 +186,24 @@ function Director() {
     camera.position.set(C.x + side + p.sx * par + sx, C.y - p.sy * par * 0.6 + sy, C.z);
     look.set(C.tx + side + sx * 0.5, C.ty + sy * 0.5, C.tz);
     camera.lookAt(look);
+    // the cursor's lock-on box follows the vape's outline on screen (its 8 bounding-box corners, projected)
+    const hit = document.getElementById("vape-hit");
+    if (hit && v) {
+      if (store.get().phase === "idle") {
+        v.updateWorldMatrix(true, false);
+        let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+        for (let i = 0; i < 8; i++) {
+          corner.set(i & 1 ? 1.8 : -1.8, i & 2 ? 0.63 : -0.63, i & 4 ? 0.31 : -0.31).applyMatrix4(v.matrixWorld).project(camera);
+          const sx = ((corner.x + 1) / 2) * size.width, sy = ((1 - corner.y) / 2) * size.height;
+          x0 = Math.min(x0, sx); x1 = Math.max(x1, sx); y0 = Math.min(y0, sy); y1 = Math.max(y1, sy);
+        }
+        hit.style.transform = `translate(${x0.toFixed(1)}px, ${y0.toFixed(1)}px)`;
+        hit.style.width = `${(x1 - x0).toFixed(1)}px`; hit.style.height = `${(y1 - y0).toFixed(1)}px`;
+        if (t - lastConf.current > 0.45) {                       // a live-looking detector confidence
+          lastConf.current = t; hit.dataset.cursorLabel = `vape ${(0.91 + Math.random() * 0.07).toFixed(2)}`;
+        }
+      }
+    }
     // the "Take a puff" label follows the vape on screen
     const hint = document.getElementById("vape-anchor");
     if (hint && v) {

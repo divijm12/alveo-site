@@ -43,7 +43,7 @@ Download: ~1.7 MB gzipped (3D chunk lazy-loaded; most of it is three.js + the Ra
 
 ## React Bits (src/bits/)
 
-Nine components copied from [React Bits](https://reactbits.dev) (the library is copy-in by design), each with its
+Ten components copied from [React Bits](https://reactbits.dev) (the library is copy-in by design), each with its
 licence header: MIT + Commons Clause, so free to use in this site; the components may not be sold or redistributed on
 their own. Where they're used:
 
@@ -57,5 +57,6 @@ their own. Where they're used:
 | GlareHover | a glass glare sweeps over the menu-bar / puff-card mock on hover |
 | GradualBlur | progressive blur under the nav as the story scrolls beneath it |
 | ShinyText | a slow sheen across the "Beta · Mac and Windows" pill |
+| TargetCursor | the cursor: a detection reticle that locks onto anything pressable; on the vape (an invisible box the 3D director keeps on its screen outline) it shows a live "vape 0.94" tag like Alveo's detector. Mouse only; touch keeps the normal cursor |
 
 Cost: +65 KB gzipped on the first chunk (mostly `motion`, used only by BlurText). 60 fps unchanged.

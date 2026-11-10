@@ -20,6 +20,7 @@ import SpotlightCard from "./bits/SpotlightCard.jsx";
 import GlareHover from "./bits/GlareHover.jsx";
 import GradualBlur from "./bits/GradualBlur.jsx";
 import ShinyText from "./bits/ShinyText.jsx";
+import TargetCursor from "./bits/TargetCursor.jsx";
 import "./sections/sections.css";
 import "./story.css";
 
@@ -40,7 +41,7 @@ function Download({ os, size = "lg", label, className = "" }) {
     <Magnet padding={size === "sm" ? 40 : 70} magnetStrength={ghost ? 9 : 6} maxOffset={size === "sm" ? 6 : 12} wrapperClassName={`dl-wrap ${className}`}>
       <ClickSpark sparkColor={ghost ? ["#f4f4f5", "#a1a1aa"] : ["#ff3a33", "#ff8a5c", "#ffd2c4"]} sparkCount={12} sparkRadius={size === "sm" ? 28 : 42}
         sparkSize={10} duration={520} glow={ghost ? 0 : 0.6} style={{ display: "inline-block", width: "auto", height: "auto" }}>
-        <a className={`dl dl--${size}`} href={url || "#download"} {...(url ? { download: "" } : {})} data-os={os}>
+        <a className={`dl dl--${size} cursor-target`} href={url || "#download"} {...(url ? { download: "" } : {})} data-os={os}>
           <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v8M4.5 7.5 8 11l3.5-3.5M3 13.5h10" /></svg>
           <span>{label ?? `Download for ${OS_NAME[os]}`}</span>
         </a>
@@ -124,19 +125,26 @@ export default function App() {
 
       <GradualBlur target="page" position="top" height="7.5rem" strength={2.2} layers={6} curve="bezier" zIndex={25} />
       <header className="nav">
-        <a className="wordmark" href="#hero" aria-label="Alveo, back to top">ALVEO<span>.</span></a>
+        <a className="wordmark cursor-target" href="#hero" aria-label="Alveo, back to top">ALVEO<span>.</span></a>
         <nav className="nav-links" aria-label="Sections">
-          <a href="#problem" className={chapter === "problem" ? "on" : ""}>The problem</a>
-          <a href="#solution" className={chapter === "solution" ? "on" : ""}>How it helps</a>
-          <a href="#download" className={chapter === "download" ? "on" : ""}>Download</a>
+          <a href="#problem" className={"cursor-target" + (chapter === "problem" ? " on" : "")}>The problem</a>
+          <a href="#solution" className={"cursor-target" + (chapter === "solution" ? " on" : "")}>How it helps</a>
+          <a href="#download" className={"cursor-target" + (chapter === "download" ? " on" : "")}>Download</a>
         </nav>
         <Download os={os} size="sm" label="Download" className="nav-dl" />
       </header>
 
+      {/* the cursor: a detection reticle that locks onto anything you can press; on the vape it reports
+          "vape 0.94" like Alveo's detector does */}
+      <TargetCursor cursorColor="#f4f4f5" cursorColorOnTarget="#ff3a33" blendMode="normal" spinDuration={7} hoverDuration={0.22}
+        size={26} cornerSize={10} thickness={2} padding={9} dotSize={4} parallaxOn />
+
       {/* stage overlay: "take a puff" on the vape; caption + replay bottom right */}
       <div className="stage-ui">
+        <div id="vape-hit" className="vape-hit cursor-target" data-cursor-label="vape 0.94" data-phase={phase}
+          onClick={() => actions.fire()} onPointerEnter={() => store.set({ hoverVape: true })} onPointerLeave={() => store.set({ hoverVape: false })} />
         <div id="vape-anchor" className={"vape-anchor" + (hover ? " is-hover" : "")} data-phase={phase}>
-          <button className="puff" type="button" onClick={() => actions.fire()} disabled={phase !== "idle"} tabIndex={phase === "idle" ? 0 : -1}>
+          <button className="puff cursor-target" type="button" onClick={() => actions.fire()} disabled={phase !== "idle"} tabIndex={phase === "idle" ? 0 : -1}>
             <span className="puff-ring" aria-hidden="true" /><span>Take a puff</span>
           </button>
         </div>
@@ -151,7 +159,7 @@ export default function App() {
             <span>marks<br />left behind</span>
           </div>
           <p className="cap-heal">The lungs relight as you read. In the app, the lung picture tracks your week: an illustration, not a measurement.</p>
-          <button className="replay" type="button" tabIndex={-1} onClick={() => { actions.replay(); scrollToId("hero"); }}>
+          <button className="replay cursor-target" type="button" tabIndex={-1} onClick={() => { actions.replay(); scrollToId("hero"); }}>
             <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8a5.5 5.5 0 1 0 1.7-4" /><path d="M2.5 2.5v3h3" /></svg>Again</button>
         </div>
       </div>
@@ -168,10 +176,10 @@ export default function App() {
           <p className="st-lead st-in">Alveo uses your webcam to count the puffs you take at your desk, then helps you cut down, and possibly quit. It all runs on your computer.</p>
           <div className="st-ctas st-in">
             <Download os={os} />
-            <a className="st-alt" href={DOWNLOADS[other(os)] || "#download"}>or for {OS_NAME[other(os)]}</a>
+            <a className="st-alt cursor-target" href={DOWNLOADS[other(os)] || "#download"}>or for {OS_NAME[other(os)]}</a>
           </div>
           <p className="st-trust st-in">Camera frames never leave your computer · works offline</p>
-          <a className="st-cue st-in" href="#problem"><span>Scroll to see what one puff does</span><i aria-hidden="true" /></a>
+          <a className="st-cue st-in cursor-target" href="#problem"><span>Scroll to see what one puff does</span><i aria-hidden="true" /></a>
         </section>
 
         {/* ---------------- 01 the problem (the pinballs run alongside) ---------------- */}
@@ -225,7 +233,7 @@ export default function App() {
             <div className="pi-panel st-panel st-rv">
               <div className="pi-seg" role="radiogroup" aria-label="Pace">
                 {PACES.map(p => (
-                  <button key={p.id} role="radio" aria-checked={pace === p.id} className={pace === p.id ? "is-on" : ""} onClick={() => setPace(p.id)}>
+                  <button key={p.id} role="radio" className={"cursor-target" + (pace === p.id ? " is-on" : "")} aria-checked={pace === p.id} onClick={() => setPace(p.id)}>
                     <b>{p.name}</b><span>{p.span}</span>{p.id === "steady" && <em>Default</em>}
                   </button>
                 ))}
