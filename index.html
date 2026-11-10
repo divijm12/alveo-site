@@ -74,10 +74,21 @@
   .soon .os:first-child .os-ico { margin-top: -.2em; }   /* the apple sits optically low */
   .trap { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
   form button:disabled { opacity: .6; cursor: default; }
+  .beta { opacity: 0; animation: rise .9s var(--ease) 2.1s forwards; display: inline-flex; align-items: center; gap: .55em;
+    flex-wrap: wrap; justify-content: center; margin-top: 2px; padding: 9px 16px; border-radius: 999px; font-size: .85rem;
+    color: var(--ink-2); text-decoration: none; background: rgba(255, 255, 255, .04); border: 1px solid rgba(255, 255, 255, .12);
+    transition: border-color .2s, background .2s, color .2s; }
+  .beta .sep { color: var(--ink-3); } .beta-where { color: var(--ink-3); }
+  .beta-go { color: var(--red); font-weight: 600; display: inline-flex; gap: .3em; }
+  .beta .arrow { transition: transform .2s var(--ease); }
+  .beta:hover { color: var(--ink); border-color: rgba(255, 45, 45, .5); background: rgba(255, 45, 45, .07); }
+  .beta:hover .arrow { transform: translateX(3px); }
+  .beta:focus-visible { outline: 2px solid #ff2d2d; outline-offset: 2px; }
   .hint { font-size: .8rem; letter-spacing: .04em; color: var(--ink-3); animation-delay: 2.4s; transition: color .4s; }
   .hint.on { color: var(--ink-2); }
   @media (max-width: 420px) { form { flex-direction: column; } form input { flex: none; } form button { width: 100%; }
-    .soon { font-size: .66rem; letter-spacing: .07em; padding: 7px 12px; gap: .35em; } }
+    .soon { font-size: .66rem; letter-spacing: .07em; padding: 7px 12px; gap: .35em; }
+    .beta { font-size: .8rem; padding: 8px 14px; } }
   @keyframes draw { to { stroke-dashoffset: 0; } }
   @keyframes dot-in { to { opacity: 1; transform: none; } }
   @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
@@ -85,7 +96,7 @@
   @keyframes breathe { 0%, 100% { transform: scale(1); opacity: .55; } 40% { transform: scale(1.12); opacity: .9; } }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; }
-    .logo .dots circle, h1, p, .soon, footer, form, .hint { opacity: 1; transform: none; }
+    .logo .dots circle, h1, p, .soon, footer, form, .hint, .beta { opacity: 1; transform: none; }
     .logo .airway path { stroke-dashoffset: 0; }
     .glow { opacity: .55; }
     #smoke { display: none; }
@@ -111,6 +122,7 @@
     <button type="submit" id="notify-btn">Notify me</button>
   </form>
   <div class="note" id="note" role="status" aria-live="polite"></div>
+  <a class="beta" href="https://beta.getalveo.app">Private beta<span class="sep" aria-hidden="true">·</span><span class="beta-where">Mac, US only</span><span class="beta-go">Request access <span class="arrow" aria-hidden="true">→</span></span></a>
   <div class="hint" id="hint">Press and hold anywhere to take a breath</div>
 </main>
 <footer>© 2026 Alveo</footer>
