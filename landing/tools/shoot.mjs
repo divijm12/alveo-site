@@ -1,4 +1,4 @@
-// Visual check: node tools/shoot.mjs <name> [w] [h] [--fire] [--at=0.5,2,4,8] [--scroll=y1,y2] [--url=...]
+// Visual check: node tools/shoot.mjs <name> [w] [h] [--fire (scroll a little: the breath)] [--at=0.5,2,4,8] [--scroll=y1,y2] [--url=...]
 // Screenshots into shots/, prints console errors and a frame-time sample.
 import { chromium } from "playwright";
 const [name = "shot", w = "1440", h = "900", ...rest] = process.argv.slice(2);
@@ -14,7 +14,7 @@ p.on("console", m => { if (["error", "warning"].includes(m.type())) errs.push(`$
 p.on("pageerror", e => errs.push("pageerror: " + e.message));
 await p.goto(url, { waitUntil: "networkidle" });
 await p.waitForTimeout(+(val("wait") || 2500));
-if (flag("fire")) await p.click(".puff", { force: true, timeout: 5000 }).catch(e => errs.push("click failed: " + e.message.slice(0, 80)));
+if (flag("fire")) await p.mouse.wheel(0, 140);                 // the first scroll breathes the cloud in
 let t0 = 0;
 for (const t of at) {
   await p.waitForTimeout(Math.max(0, (t - t0) * 1000)); t0 = t;

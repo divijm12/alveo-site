@@ -1,9 +1,8 @@
 // Tiny shared store (no dependency): the 3D scene, the DOM overlay and the scroll sections read and write it.
 import { useSyncExternalStore } from "react";
 const state = {
-  phase: "loading",   // loading | idle | docking | firing | running | done
-  hoverVape: false,
-  chapter: "hero",    // hero | problem | solution | download (what the story column shows)
+  phase: "loading",   // loading | idle (the cloud in the sky) | inhaling | running (poison spreads) | done
+  chapter: "intro",   // intro | hero | problem | solution | download (what the story column shows)
   destroyed: 0,       // dots destroyed so far
   total: 212,
   heal: 0,            // 0..1, driven by scroll in the product sections: damaged dots relight

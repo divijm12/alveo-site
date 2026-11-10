@@ -1,7 +1,7 @@
-// The 3D stage and its director. Owns the poison simulation, the vape choreography (float -> swing tip-down -> dock
-// in the windpipe port -> exhale -> lift away) and the camera shots, all on GSAP timelines. Shots are framed from the
-// viewport's aspect so phones get the same composition as desktops.
-import { Suspense, forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
+// The 3D stage and its director. Owns the poison simulation, the opening sky (cloud puffs + chemicals), the inhale
+// (the sky spirals down into the windpipe's mouth, then the poison runs) and the camera shots, all on GSAP
+// timelines. Shots are framed from the viewport's aspect.
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { EffectComposer, Bloom, Vignette, Noise, ToneMapping } from "@react-three/postprocessing";
 import { ToneMappingMode, BlendFunction } from "postprocessing";
@@ -10,26 +10,25 @@ import * as THREE from "three";
 import gsap from "gsap";
 import Studio from "./Studio.jsx";
 import Lungs from "./Lungs.jsx";
-import Airway, { PORT_Y } from "./Airway.jsx";
+import Airway from "./Airway.jsx";
 import Toxin from "./Toxin.jsx";
+import Clouds, { SKY_Y } from "./Clouds.jsx";
 import { LungSim } from "../sim/LungSim.js";
 import { store, actions } from "../store.js";
 
-const vapeMods = import.meta.glob("./Vape.jsx", { eager: true });
 const FOV = 35;
-export const VAPE_Y = 7.3;          // hero: the vape floats here, well above the windpipe port (y ≈ 4.4)
-const TIP = 1.8;                     // distance from the vape's centre to its mouthpiece tip (placeholder; updated from the model)
-const shake = { amp: 0 };            // camera shake (a small thud when the vape docks)
+const shake = { amp: 0 };            // camera shake (kept for small accents)
 
-// ---------- camera shots (centre + box to fit), from the aspect ratio ----------
+// ---------- camera shots (centre + box to fit + sideways shift), from the aspect ratio ----------
 function fitDist(w, h, aspect) { const t = Math.tan((FOV * Math.PI) / 360); return Math.max(h / 2 / t, w / 2 / (t * aspect)); }
-// Every shot is framed for the right side of the screen: the story column sits on the left, and useFrame shifts
-// camera + target sideways by SIDE x the visible width (a parallel shift, so no extra perspective skew).
+// The opening sky is centred (the headline sits in the middle of the screen). Every later shot is framed for the
+// right side: the story column sits on the left, and useFrame shifts camera + target sideways by `sd` x the
+// visible width (a parallel shift, so no extra perspective skew).
 const SIDE = 0.235;
 const SHOTS = {
-  hero: a => { const d = fitDist(9.4, 5.4, a); return { x: 0, y: VAPE_Y - 0.3, z: d, tx: 0, ty: VAPE_Y - 0.15, tz: 0 }; },
-  wide: a => { const d = fitDist(5.6, 13.4, a); return { x: d * 0.12, y: 2.3, z: d, tx: 0, ty: 2.75, tz: 0 }; },
-  play: a => { const d = fitDist(5.2, 11.9, a); return { x: d * 0.07, y: -0.05, z: d, tx: 0, ty: 0.2, tz: 0 }; },
+  sky: a => { const d = fitDist(15.5, 9.4, a); return { x: 0, y: SKY_Y, z: d, tx: 0, ty: SKY_Y, tz: 0, sd: 0 }; },
+  wide: a => { const d = fitDist(5.6, 13.4, a); return { x: d * 0.12, y: 2.3, z: d, tx: 0, ty: 2.75, tz: 0, sd: SIDE }; },
+  play: a => { const d = fitDist(5.2, 11.9, a); return { x: d * 0.07, y: -0.05, z: d, tx: 0, ty: 0.2, tz: 0, sd: SIDE }; },
 };
 
 export default function Experience() {
@@ -42,7 +41,7 @@ export default function Experience() {
   const [dpr, setDpr] = useState(() => Math.min(window.devicePixelRatio || 1, low ? 1.25 : 1.5));
   return (
     <Canvas className="stage" flat dpr={dpr} gl={{ antialias: false, powerPreference: "high-performance", stencil: false }}
-      camera={{ fov: FOV, near: 0.1, far: 90, position: [0, VAPE_Y, 14] }}
+      camera={{ fov: FOV, near: 0.1, far: 90, position: [0, SKY_Y, 16] }}
       onCreated={({ gl }) => { gl.setClearColor("#030304"); gl.debug.checkShaderErrors = import.meta.env.DEV; /* the check blocks on parallel compiles */ }}>
       <PerformanceMonitor flipflops={3} onDecline={() => { store.set({ quality: "low" }); setDpr(d => Math.max(1, +(d - 0.25).toFixed(2))); }} />
       <Suspense fallback={null}>
@@ -59,22 +58,14 @@ export default function Experience() {
   );
 }
 
-// Stand-in until src/scene/Vape.jsx exists (same API).
-const PlaceholderVape = forwardRef(function PlaceholderVape(props, ref) {
-  const g = useRef(), m = useRef();
-  useImperativeHandle(ref, () => ({ get group() { return g.current; }, setFire: v => m.current && m.current.emissive.setRGB(v * 2, 0, 0), setScreen() {}, setHover() {}, mouthpiece: null }));
-  return <group ref={g} {...props}><mesh ref={m}><boxGeometry args={[3.6, 1.25, 0.62]} /><meshStandardMaterial color="#111" metalness={0.8} roughness={0.4} /></mesh></group>;
-});
-const VapeModel = vapeMods["./Vape.jsx"]?.default ?? PlaceholderVape;
-
 function Director() {
   const { camera, size, gl, scene, setFrameloop } = useThree();
   const content = useRef(), ready = useRef({ sim: false, gpu: false });
   // Shaders compile in parallel, off the main thread, BEFORE the scene is first drawn. Drawing with a shader that isn't
   // compiled yet blocks the page (measured: a 7.7 s freeze at load, 0.1-0.5 s stalls when effects first appear).
   // So: let the studio environment render alone for two frames, then stop drawing, make everything (incl. anything
-  // hidden) visible, compileAsync, hide them again and start drawing. The page and
-  // cursor stay responsive the whole time; the stage fades in when it's ready.
+  // hidden) visible, compileAsync, hide them again and start drawing. The page and cursor stay responsive the
+  // whole time; the stage fades in when it's ready.
   useEffect(() => {
     let alive = true, n = 0, raf = 0;
     const go = async () => {
@@ -101,20 +92,16 @@ function Director() {
   }, []);
   function becomeReady() {
     if (!ready.current.sim || !ready.current.gpu || store.get().phase !== "loading") return;
-    const sim = simRef.current;
-    if (store.get().reducedMotion) {                          // no motion: show the end state straight away
-      sim.runInstant(); V.y = 30; Object.assign(C, SHOTS.play(size.width / size.height)); shot.current = "play";
-      store.set({ phase: "done", destroyed: sim.destroyed, stageReady: true });
-    } else store.set({ phase: "idle", stageReady: true });
+    store.set({ phase: "idle", stageReady: true });
     // the reader got ahead of the loading: catch the story up
     const ch = store.get().chapter;
-    if (ch === "problem") actions.fire(); else if (ch === "solution" || ch === "download") actions.skipToEnd();
+    if (ch === "hero" || ch === "problem") actions.fire(); else if (ch === "solution" || ch === "download") actions.skipToEnd();
   }
-  const simRef = useRef(null), vape = useRef(), dock = useRef({ dock: 0 });
+  const simRef = useRef(null), dock = useRef({ dock: 0 });
   // animated proxies (GSAP writes, useFrame reads)
-  const V = useRef({ x: 0, y: VAPE_Y, rz: 0, ry: -0.35, float: 1, fire: 0, hover: 0, scale: 1 }).current;
-  const C = useRef({ ...SHOTS.hero(size.width / size.height) }).current;
-  const shot = useRef("hero"), tl = useRef(null), pointer = useRef({ x: 0, y: 0, sx: 0, sy: 0 });
+  const I = useRef({ pull: 0 }).current;                       // the inhale: 0 = clouds in the sky, 1 = all breathed in
+  const C = useRef({ ...SHOTS.sky(size.width / size.height) }).current;
+  const shot = useRef("sky"), tl = useRef(null), pointer = useRef({ x: 0, y: 0, sx: 0, sy: 0 });
 
   const goShot = (name, dur = 2, ease = "power3.inOut", extra = {}) => {
     shot.current = name;
@@ -146,29 +133,21 @@ function Director() {
     goShot("play", 7, "sine.inOut", { z: SHOTS.play(size.width / size.height).z * 0.95 });
   }
 
+  // the breath: the sky spirals down into the windpipe; as the first of it reaches the mouth, the poison starts
   actions.fire = () => {
     const sim = simRef.current;
     if (!sim || store.get().phase !== "idle") return;
-    store.set({ phase: "docking", hoverVape: false });
-    document.body.style.cursor = "";
-    // after the -90° swing a local tip (mx, my) sits at (x + my, y - mx): seat it a hair inside the port
-    const mp = vape.current?.mouthpiece?.position, mx = mp ? mp.x : TIP, my = mp ? mp.y : 0;
-    const dockY = PORT_Y + mx - 0.06, dockX = -my;
+    if (store.get().reducedMotion) { actions.skipToEnd(); return; }
+    store.set({ phase: "inhaling" });
     tl.current?.kill();
     const t = gsap.timeline();
-    t.add(goShot("wide", 1.9), 0)
-      .to(V, { float: 0, hover: 0, ry: 0, duration: 0.6, ease: "power2.out" }, 0)
-      .to(V, { rz: -Math.PI / 2, duration: 1.2, ease: "power3.inOut" }, 0.1)
-      .to(V, { y: dockY + 0.7, x: dockX, duration: 1.2, ease: "power3.inOut" }, 0.1)
-      .to(V, { y: dockY, duration: 0.32, ease: "power4.in" }, 1.32)
-      .add(() => { shake.amp += 0.05; dock.current.dock = 1; vape.current?.setScreen?.("PUFF"); }, 1.64)
-      .to(V, { fire: 1, duration: 0.35, ease: "power2.in" }, 1.7)
-      .add(() => { store.set({ phase: "running" }); sim.release(); }, 1.95)
-      .add(goShot("play", 2.6, "power2.inOut"), 2.5)
-      .to(V, { fire: 0, duration: 0.5 }, 2.85)
-      .add(() => { dock.current.dock = 0; }, 3.0)
-      .to(V, { y: dockY + 9, duration: 2.2, ease: "power2.in" }, 3.0)
-      .to(V, { rz: -Math.PI / 2 + 0.5, ry: 0.6, duration: 2.2, ease: "power1.in" }, 3.0);
+    // the cloud starts to turn while we still look at the sky, then the camera follows it down to the mouth
+    t.to(I, { pull: 1, duration: 4.2, ease: "power1.in" }, 0)
+      .add(goShot("wide", 3.4, "power2.inOut"), 0.5)
+      .add(() => { dock.current.dock = 1; }, 1.2)
+      .add(() => { store.set({ phase: "running" }); sim.release(); }, 2.9)
+      .add(goShot("play", 2.6, "power2.inOut"), 4.3)
+      .add(() => { dock.current.dock = 0; }, 5.6);
     tl.current = t;
   };
 
@@ -176,82 +155,54 @@ function Director() {
     const sim = simRef.current;
     if (!sim || store.get().phase !== "idle") return;
     tl.current?.kill(); sim.reset(); sim.runInstant();
-    V.y = 40; V.float = 0;
+    I.pull = 1;
     Object.assign(C, SHOTS.play(size.width / size.height)); shot.current = "play";
-    store.set({ phase: "done", destroyed: sim.destroyed, hoverVape: false });
+    store.set({ phase: "done", destroyed: sim.destroyed });
   };
 
+  // back to the top: the cloud breathes back out of the windpipe and the lungs are clean again
   actions.replay = () => {
-    const sim = simRef.current; if (!sim) return;
+    const sim = simRef.current; if (!sim || store.get().phase === "idle" || store.get().phase === "loading") return;
     tl.current?.kill();
     sim.reset(); store.set({ phase: "idle", destroyed: 0 });
-    dock.current.dock = 0; vape.current?.setScreen?.("0.60");
-    Object.assign(V, { x: 0, y: VAPE_Y + 4, rz: 0, ry: -0.35, fire: 0, float: 1 });
-    gsap.to(V, { y: VAPE_Y, duration: 1.6, ease: "power3.out" });
-    goShot("hero", 2, "power3.inOut");
+    dock.current.dock = 0;
+    const still = store.get().reducedMotion;
+    gsap.to(I, { pull: 0, duration: still ? 0 : 2.6, ease: "power2.out", overwrite: true });
+    if (still) { Object.assign(C, SHOTS.sky(size.width / size.height)); shot.current = "sky"; } else goShot("sky", 2.4, "power3.inOut");
   };
 
   const look = useMemo(() => new THREE.Vector3(), []);
-  const corner = useMemo(() => new THREE.Vector3(), []), lastConf = useRef(0);
-  if (import.meta.env.DEV) window.__alveo = { camera, C, V, simRef, shake, gl, scene };
-  useFrame((state, rawDt) => {
+  if (import.meta.env.DEV) window.__alveo = { camera, C, I, simRef, shake, gl, scene };
+  // runs first every frame (see <Rig>): the clouds project the chemical labels with this frame's camera
+  const frame = useRef(); frame.current = (state, rawDt) => {
     const dt = Math.min(rawDt, 0.05), t = state.clock.elapsedTime;
     const sim = simRef.current;
-    const { hoverVape, heal, phase } = store.get();
+    const { heal, phase } = store.get();
     // reader already reached the healing part while the poison still spreads: fast-forward to the end
     if (sim) sim.update(heal > 0.001 && phase === "running" ? dt * 5 : dt);
-    // vape: idle float + pointer tilt, hover glow, fire
+    // camera: shot + pointer parallax + shake
     const p = pointer.current; p.sx += (p.x - p.sx) * Math.min(1, dt * 3); p.sy += (p.y - p.sy) * Math.min(1, dt * 3);
-    V.hover += ((hoverVape ? 1 : 0) - V.hover) * Math.min(1, dt * 6);
-    const v = vape.current?.group;
-    if (v) {
-      v.position.set(V.x, V.y + Math.sin(t * 1.1) * 0.08 * V.float, 0);
-      v.rotation.set(0.12 * V.float + p.sy * 0.16 * V.float, V.ry + Math.sin(t * 0.45) * 0.22 * V.float + p.sx * 0.35 * V.float, V.rz + Math.sin(t * 0.8) * 0.025 * V.float);
-      vape.current.setFire?.(V.fire); vape.current.setHover?.(V.hover);
-    }
-    // camera: shot + scroll-out + pointer parallax + shake
     shake.amp *= Math.exp(-dt * 5);
     const sx = (Math.sin(t * 61) + Math.sin(t * 37)) * shake.amp * 0.5, sy = (Math.cos(t * 53) + Math.sin(t * 29)) * shake.amp * 0.5;
-    const par = 0.18;
-    const side = -SIDE * 2 * C.z * Math.tan((FOV * Math.PI) / 360) * (size.width / size.height);
+    const par = shot.current === "sky" ? 0.4 : 0.18;           // the sky has more depth to show off
+    const side = -C.sd * 2 * C.z * Math.tan((FOV * Math.PI) / 360) * (size.width / size.height);
     camera.position.set(C.x + side + p.sx * par + sx, C.y - p.sy * par * 0.6 + sy, C.z);
     look.set(C.tx + side + sx * 0.5, C.ty + sy * 0.5, C.tz);
     camera.lookAt(look);
-    // the cursor's lock-on box follows the vape's outline on screen (its 8 bounding-box corners, projected)
-    const hit = document.getElementById("vape-hit");
-    if (hit && v) {
-      if (store.get().phase === "idle") {
-        v.updateWorldMatrix(true, false);
-        let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
-        for (let i = 0; i < 8; i++) {
-          corner.set(i & 1 ? 1.8 : -1.8, i & 2 ? 0.63 : -0.63, i & 4 ? 0.31 : -0.31).applyMatrix4(v.matrixWorld).project(camera);
-          const sx = ((corner.x + 1) / 2) * size.width, sy = ((1 - corner.y) / 2) * size.height;
-          x0 = Math.min(x0, sx); x1 = Math.max(x1, sx); y0 = Math.min(y0, sy); y1 = Math.max(y1, sy);
-        }
-        hit.style.transform = `translate(${x0.toFixed(1)}px, ${y0.toFixed(1)}px)`;
-        hit.style.width = `${(x1 - x0).toFixed(1)}px`; hit.style.height = `${(y1 - y0).toFixed(1)}px`;
-        if (t - lastConf.current > 0.45) {                       // a live-looking detector confidence
-          lastConf.current = t; hit.dataset.cursorLabel = `vape ${(0.91 + Math.random() * 0.07).toFixed(2)}`;
-        }
-      }
-    }
-    // the "Take a puff" label follows the vape on screen
-    const hint = document.getElementById("vape-anchor");
-    if (hint && v) {
-      const w = new THREE.Vector3(V.x, V.y - 0.95, 0).project(camera);
-      hint.style.transform = `translate(${((w.x + 1) / 2) * size.width}px, ${((1 - w.y) / 2) * size.height}px)`;
-    }
-  });
+    camera.updateMatrixWorld();
+  };
 
-  const onOver = e => { e.stopPropagation(); if (store.get().phase === "idle") { store.set({ hoverVape: true }); document.body.style.cursor = "pointer"; } };
-  const onOut = () => { store.set({ hoverVape: false }); document.body.style.cursor = ""; };
-  const onClick = e => { e.stopPropagation(); actions.fire(); };
   return (
     <group ref={content} visible={false}>
-      <VapeModel ref={vape} onPointerOver={onOver} onPointerOut={onOut} onClick={onClick} />
+      <Rig frame={frame} />
       <Airway dockRef={dock} />
       <Lungs simRef={simRef} />
       <Toxin simRef={simRef} />
+      <Clouds I={I} />
     </group>
   );
 }
+
+// Child effects subscribe before their parent's, so the director's per-frame work lives in this first child:
+// it runs before the lungs, vapor and clouds read the camera.
+function Rig({ frame }) { useFrame((state, dt) => frame.current(state, dt)); return null; }

@@ -5,7 +5,8 @@
 .stage-wrap canvas { display: block; }
 /* keeps the left column readable over the scene; the right stays clear for the lungs */
 .stage-shade { position: absolute; inset: 0; pointer-events: none;
-  background: linear-gradient(90deg, rgba(3,3,4,.94) 0%, rgba(3,3,4,.86) 26%, rgba(3,3,4,.45) 42%, rgba(3,3,4,0) 54%); }
+  background: linear-gradient(90deg, rgba(3,3,4,.94) 0%, rgba(3,3,4,.86) 26%, rgba(3,3,4,.45) 42%, rgba(3,3,4,0) 54%); transition: opacity 1.6s var(--ease); }
+.stage-wrap.is-intro .stage-shade { opacity: 0; }
 
 /* ---------- nav ---------- */
 .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 30; height: 76px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
@@ -87,16 +88,6 @@
 
 /* ---------- stage overlay (over the 3D, right side) ---------- */
 .stage-ui { position: fixed; inset: 0; z-index: 2; pointer-events: none; }
-.vape-anchor { position: absolute; left: 0; top: 0; will-change: transform; }
-.puff { position: relative; transform: translate(-50%, 18px); display: inline-flex; align-items: center; gap: 10px; height: 38px; padding: 0 16px 0 14px;
-  border-radius: 999px; border: 1px solid rgba(255,58,51,.35); background: rgba(12,6,6,.45); color: var(--ink); font: inherit; font-size: .82rem;
-  letter-spacing: .06em; cursor: pointer; pointer-events: auto;
-  transition: opacity .6s var(--ease), transform .8s var(--ease), border-color .3s, background .3s; }
-.puff:hover, .vape-anchor.is-hover .puff { border-color: rgba(255,58,51,.8); background: rgba(40,8,8,.55); }
-.puff:focus-visible { outline: 2px solid var(--red); outline-offset: 3px; }
-.puff-ring { width: 9px; height: 9px; border-radius: 50%; background: var(--red); animation: ping 2.2s var(--ease) infinite; }
-@keyframes ping { 0% { box-shadow: 0 0 0 0 rgba(255,45,45,.55); } 70%, 100% { box-shadow: 0 0 0 12px rgba(255,45,45,0); } }
-.vape-anchor:not([data-phase="idle"]) .puff { opacity: 0; transform: translate(-50%, 30px); pointer-events: none; }
 
 .stage-cap { position: absolute; right: clamp(24px, 3vw, 48px); top: 92px; display: grid; justify-items: end; gap: 14px; text-align: right; max-width: 300px; }
 .stage-cap > * { opacity: 0; transform: translateY(8px); transition: opacity .7s var(--ease), transform .9s var(--ease); }
@@ -105,18 +96,19 @@
   text-shadow: 0 0 22px rgba(166, 209, 58, .35); min-width: 2.2em; text-align: right; }
 .cap-marks > span { font-size: .66rem; line-height: 1.35; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-3); text-align: left; }
 .cap-heal { margin: 0; font-size: .8rem; line-height: 1.5; color: #8a8a93; }
+.stage-cap.is-hero:not([data-phase="idle"]) .cap-marks,
 .stage-cap.is-problem:not([data-phase="idle"]) .cap-marks,
 .stage-cap.is-solution .cap-heal { opacity: 1; transform: none; }
 .replay { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 14px; border-radius: 999px; font: inherit; font-size: .78rem;
   color: var(--ink-2); background: rgba(10,10,12,.5); border: 1px solid #2a2a2f; cursor: pointer; }
 .replay:hover { color: var(--ink); border-color: #45454c; }
 .replay svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-.stage-cap[data-phase="done"].is-problem .replay { opacity: 1; transform: none; pointer-events: auto; }
+.stage-cap[data-phase="done"].is-hero .replay, .stage-cap[data-phase="done"].is-problem .replay { opacity: 1; transform: none; pointer-events: auto; }
 
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 @media (prefers-reduced-motion: reduce) {
-  .puff-ring, .st-cue i::after { animation: none; }
-  .stage-cap > *, .puff { transition: none; }
+  .st-cue i::after, .intro-cue i::after, .wisp i { animation: none; }
+  .stage-cap > * { transition: none; }
 }
 
 /* ---------- React Bits pieces, styled to the page ---------- */
@@ -166,9 +158,52 @@
 .target-cursor__label { padding: 4px 7px 3px; border-radius: 3px; background: #ff3a33; color: #0a0a0b !important;
   font: 600 10.5px/1 ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace; letter-spacing: .04em;
   box-shadow: 0 4px 18px rgba(255, 45, 45, .35); }
-.vape-hit { position: absolute; left: 0; top: 0; pointer-events: auto; cursor: pointer; border-radius: 14px; }
-.vape-hit:not([data-phase="idle"]) { display: none; }
 
 /* the 3D fades in once its shaders are compiled (the page is usable before that) */
 .stage-wrap canvas { opacity: 0; transition: opacity 1.4s var(--ease); }
 .stage-wrap.is-ready canvas { opacity: 1; }
+
+/* ---------- the opening: words in a cloud ---------- */
+.st-intro { min-height: 100vh; }
+.intro { position: absolute; inset: 0; overflow: hidden; transition: opacity 1s var(--ease), visibility 0s linear 0s; }
+.intro.is-away { opacity: 0; visibility: hidden; transition: opacity .9s var(--ease), visibility 0s linear .9s; }
+.intro-head { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-54%); text-align: center;
+  font-family: var(--display); font-weight: 300; font-size: clamp(3.4rem, 7.6vw, 8.6rem); line-height: .98; letter-spacing: -.05em; color: #ececef; }
+.intro-head p { margin: 0; white-space: nowrap; }
+.intro-l1 { transform: translateX(-7%); }
+.intro-l2 { transform: translateX(7%); }
+.intro-head .ch { display: inline-block; will-change: transform, filter, opacity; text-shadow: 0 0 60px rgba(0,0,0,.55); }
+/* candy: a dusty, sugary rose; lead: dull gunmetal with a cold sheen */
+.ch--candy { background: linear-gradient(180deg, #f6d5df 8%, #d39aae 60%, #a86f83 100%); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: none; }
+.ch--lead { background: linear-gradient(180deg, #c7ccd3 0%, #8c929a 38%, #50555c 62%, #7d838b 100%); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: none; }
+
+/* mist from the same puffs as the 3D cloud: two behind the words, two drifting in front of them */
+.wisp { position: absolute; pointer-events: none; opacity: 1; }
+.wisp i { display: block; width: 100%; height: 100%; background-image: var(--cloud); background-size: 200% 200%; background-repeat: no-repeat;
+  opacity: 0; filter: brightness(.62) blur(1.5px); transition: opacity 3s var(--ease); animation: wisp 24s ease-in-out infinite alternate; }
+.intro.has-mist .wisp i { opacity: var(--o); }
+.wisp--1 { left: 6vw; top: 44vh; width: 38vw; height: 26vw; --o: .34; }
+.wisp--1 i { background-position: 0 0; }
+.wisp--2 { right: 4vw; top: 46vh; width: 42vw; height: 28vw; --o: .3; }
+.wisp--2 i { background-position: 100% 100%; animation-duration: 31s; animation-direction: alternate-reverse; }
+.wisp--3 { left: 30vw; top: 58vh; width: 46vw; height: 30vw; --o: .5; }
+.wisp--3 i { background-position: 100% 0; animation-duration: 28s; }
+.wisp--4 { right: 18vw; top: 6vh; width: 34vw; height: 22vw; --o: .32; }
+.wisp--4 i { background-position: 0 100%; animation-duration: 35s; }
+@keyframes wisp { from { transform: translate3d(-2.5vw, 0, 0); } to { transform: translate3d(2.5vw, -1.2vh, 0); } }
+
+/* chemicals hanging in the cloud (the 3D scene moves them) */
+.chems { position: absolute; inset: 0; }
+.chem { position: absolute; left: 0; top: 0; display: flex; align-items: baseline; gap: 9px; opacity: 0; white-space: nowrap;
+  transform-origin: 0 50%; will-change: transform, opacity; }
+.chem i { align-self: center; width: 5px; height: 5px; border-radius: 50%; border: 1px solid rgba(236,236,239,.6); box-shadow: 0 0 0 4px rgba(236,236,239,.05); }
+.chem b { font-family: var(--display); font-weight: 300; font-size: 1.15rem; letter-spacing: .01em; color: #e6e6ea; }
+.chem sub { font-size: .62em; vertical-align: -.25em; line-height: 0; }
+.chem em { font: 500 .62rem/1 ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace; letter-spacing: .16em; text-transform: uppercase; color: #8d8d96; font-style: normal; }
+
+.intro-foot { position: absolute; left: clamp(24px, 3vw, 48px); right: clamp(24px, 3vw, 48px); bottom: 30px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; }
+.intro-note { grid-column: 1; margin: 0; max-width: 34em; font-size: .74rem; line-height: 1.55; color: #6d6d76; }
+.intro-cue { grid-column: 2; display: grid; justify-items: center; gap: 12px; color: #8d8d96; text-decoration: none; font-size: .72rem; letter-spacing: .2em; text-transform: uppercase; pointer-events: auto; }
+.intro-cue i { position: relative; width: 1px; height: 42px; background: rgba(255,255,255,.12); overflow: hidden; }
+.intro-cue i::after { content: ""; position: absolute; left: 0; top: -40%; width: 1px; height: 40%; background: #c9cdd3; animation: cue 2.4s var(--ease) infinite; }
+.intro-cue:hover { color: var(--ink); }

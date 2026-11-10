@@ -1,13 +1,13 @@
 // The windpipe as a machine: a stack of C-shaped machined rings (open at the back, like tracheal cartilage) on two
-// spine rails, ending in a docking port at the top where the vape's mouthpiece seats. The port's LED ring lights
-// when the vape docks (`dock` 0..1, set by the director).
+// spine rails, ending in a flared mouth at the top that the cloud is breathed into. Its LED ring lights while
+// the breath goes in (`dock` 0..1, set by the director).
 import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { TRACHEA } from "../sim/LungSim.js";
 import { PLATE_Z } from "./Lungs.jsx";
 
-export const PORT_Y = TRACHEA.top + 0.02;                     // top of the port: the mouthpiece tip seats here
+export const PORT_Y = TRACHEA.top + 0.02;                     // top of the mouth: where the cloud goes in
 const RING_R = 0.19, BOTTOM = 1.74;
 
 export default function Airway({ dockRef }) {
@@ -48,7 +48,7 @@ export default function Airway({ dockRef }) {
         <boxGeometry args={[0.07, PORT_Y - BOTTOM, Math.abs(PLATE_Z) - RING_R + 0.05]} />
         <meshStandardMaterial color="#121216" metalness={0.85} roughness={0.4} />
       </mesh>
-      {/* docking port */}
+      {/* the mouth */}
       <group position={[0, PORT_Y - 0.1, 0]}>
         <mesh geometry={portGeo}><meshStandardMaterial color="#2a2a31" metalness={0.95} roughness={0.22} side={THREE.DoubleSide} /></mesh>
         <mesh geometry={collarGeo} position={[0, -0.2, 0]}><meshStandardMaterial color="#141418" metalness={0.9} roughness={0.4} side={THREE.DoubleSide} /></mesh>

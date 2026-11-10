@@ -1,6 +1,8 @@
 // The page: one scroll story beside a live 3D stage (fixed, framed on the right).
-//   Hero: what Alveo is + Download, straight away.
-//   01 Problem: scrolling in fires the vape; the vapor poisons the lungs while the problem is told.
+//   Intro: "Tastes like candy. Breathes like lead." in a dark cloud full of what vapes really put out; the first
+//          scroll breathes it all in, down the windpipe, and the poison starts.
+//   Hero: what Alveo is + Download, while the poison spreads.
+//   01 Problem: the poison finishes its work while the problem is told.
 //   02 Solution: how Alveo counts, plans and stays private; the poison washes out as you read.
 //   03 Download: the ask again, beside healthy, breathing lungs.
 // The Download button is in the nav the whole time.
@@ -19,6 +21,7 @@ import GlareHover from "./bits/GlareHover.jsx";
 import GradualBlur from "./bits/GradualBlur.jsx";
 import ShinyText from "./bits/ShinyText.jsx";
 import TargetCursor from "./bits/TargetCursor.jsx";
+import Intro from "./Intro.jsx";
 import "./sections/sections.css";
 import "./story.css";
 
@@ -65,10 +68,10 @@ function LiveDesk() { return <DeskMock count={useStore(s => s.deskCount)} />; }
 
 export default function App() {
   const os = useMemo(detectOS, []);
-  const phase = useStore(s => s.phase), hover = useStore(s => s.hoverVape), stageReady = useStore(s => s.stageReady);
+  const phase = useStore(s => s.phase), stageReady = useStore(s => s.stageReady);
   const chapter = useStore(s => s.chapter);
   // which line shows under the lungs: the punchline once the game is over, then what Alveo does as they relight
-  const words = useStore(s => s.phase === "done" && (s.chapter === "problem" || (s.chapter === "solution" && s.heal < 0.1)) ? "mark"
+  const words = useStore(s => s.phase === "done" && (s.chapter === "hero" || s.chapter === "problem" || (s.chapter === "solution" && s.heal < 0.1)) ? "mark"
     : s.chapter === "solution" && s.heal >= 0.1 && s.heal < 0.6 ? "count" : "");
   const [pace, setPace] = useState("steady");
   const sel = PACES.find(p => p.id === pace);
@@ -77,12 +80,12 @@ export default function App() {
   useLayoutEffect(() => {
     const ctx = gsap.context(() => {
       // which chapter is on screen (nav highlight + stage caption)
-      ["hero", "problem", "solution", "download"].forEach(id => ScrollTrigger.create({
+      ["intro", "hero", "problem", "solution", "download"].forEach(id => ScrollTrigger.create({
         trigger: `#${id}`, start: "top 55%", end: "bottom 55%",
         onToggle: s => s.isActive && store.set({ chapter: id }),
       }));
-      // 01: scrolling into the problem takes the puff
-      ScrollTrigger.create({ trigger: "#problem", start: "top 70%", onEnter: () => actions.fire() });
+      // the first scroll breathes the cloud in; back at the very top it breathes out again (and the lungs are clean)
+      ScrollTrigger.create({ trigger: "#intro", start: "top top-=40", onEnter: () => actions.fire(), onLeaveBack: () => actions.replay() });
       // 02: the lungs relight across the solution chapter (jumped straight here? resolve the game first)
       const heal = s => store.set({ heal: s.progress });
       ScrollTrigger.create({
@@ -92,7 +95,7 @@ export default function App() {
       });
       const mm = gsap.matchMedia();
       mm.add("(prefers-reduced-motion: no-preference)", () => {
-        gsap.from(".st-hero .st-in", { y: 24, autoAlpha: 0, duration: 1.2, ease: "expo.out", stagger: 0.08, delay: 0.2 });
+        gsap.from(".st-hero .st-in", { y: 24, autoAlpha: 0, duration: 1.2, ease: "expo.out", stagger: 0.08, scrollTrigger: { trigger: "#hero", start: "top 70%" } });
         gsap.set(".st-rv", { autoAlpha: 0 });
         ScrollTrigger.batch(".st-rv", { start: "top 86%", once: true,
           onEnter: els => gsap.fromTo(els, { y: 28, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 1.1, ease: "power3.out", stagger: 0.08, overwrite: true }) });
@@ -110,11 +113,11 @@ export default function App() {
 
   const rise = lines => lines.map((l, i) => <span className="pi-mask" key={i}><span className="pi-rise">{l}</span></span>);
   const [line2, setLine2] = useState(false);
-  // start the 3D once the headline has focused in (or the browser is idle): its first GPU work stutters the page
+  // start the 3D (the opening sky) as soon as the browser is idle: the words show first, the cloud rolls in
   const [stageOn, setStageOn] = useState(false), [cursorOn, setCursorOn] = useState(false);
   useEffect(() => {
     const start = () => setStageOn(true);
-    const id = window.requestIdleCallback ? requestIdleCallback(start, { timeout: 1200 }) : setTimeout(start, 900);
+    const id = window.requestIdleCallback ? requestIdleCallback(start, { timeout: 500 }) : setTimeout(start, 300);
     return () => (window.cancelIdleCallback ? cancelIdleCallback(id) : clearTimeout(id));
   }, []);
   useEffect(() => { if (!stageReady) return; const t = setTimeout(() => setCursorOn(true), 400); return () => clearTimeout(t); }, [stageReady]);
@@ -125,14 +128,14 @@ export default function App() {
 
   return (
     <div className="pi st" ref={root}>
-      <div className={"stage-wrap" + (stageReady ? " is-ready" : "")} aria-hidden="true">
+      <div className={"stage-wrap" + (stageReady ? " is-ready" : "") + ` is-${chapter}`} aria-hidden="true">
         {stageOn && <Suspense fallback={null}><Experience /></Suspense>}
         <div className="stage-shade" />
       </div>
 
       <GradualBlur target="page" position="top" height="6.5rem" strength={2} layers={3} curve="bezier" zIndex={25} />
       <header className="nav">
-        <a className="wordmark cursor-target" href="#hero" aria-label="Alveo, back to top">ALVEO<span>.</span></a>
+        <a className="wordmark cursor-target" href="#intro" aria-label="Alveo, back to top">ALVEO<span>.</span></a>
         <nav className="nav-links" aria-label="Sections">
           <a href="#problem" className={"cursor-target" + (chapter === "problem" ? " on" : "")}>The problem</a>
           <a href="#solution" className={"cursor-target" + (chapter === "solution" ? " on" : "")}>How it helps</a>
@@ -141,21 +144,14 @@ export default function App() {
         <Download os={os} size="sm" label="Download" className="nav-dl" />
       </header>
 
-      {/* the cursor: a detection reticle that locks onto anything you can press; on the vape it reports
-          "vape 0.94" like Alveo's detector does */}
+      {/* the cursor: a detection reticle (Alveo is a detector) that locks onto anything you can press */}
       {/* the reticle takes over only once the 3D is compiled and running: the system cursor can't freeze, ours can */}
       {cursorOn && <TargetCursor cursorColor="#f4f4f5" cursorColorOnTarget="#ff3a33" blendMode="normal" spinDuration={7} hoverDuration={0.22}
         size={26} cornerSize={10} thickness={2} padding={9} dotSize={4} parallaxOn />}
 
-      {/* stage overlay: "take a puff" on the vape; caption + replay bottom right */}
+      {/* stage overlay: the opening words + chemicals; the punchline under the lungs; caption + replay top right */}
       <div className="stage-ui">
-        <div id="vape-hit" className="vape-hit cursor-target" data-cursor-label="vape 0.94" data-phase={phase}
-          onClick={() => actions.fire()} onPointerEnter={() => store.set({ hoverVape: true })} onPointerLeave={() => store.set({ hoverVape: false })} />
-        <div id="vape-anchor" className={"vape-anchor" + (hover ? " is-hover" : "")} data-phase={phase}>
-          <button className="puff cursor-target" type="button" onClick={() => actions.fire()} disabled={phase !== "idle"} tabIndex={phase === "idle" ? 0 : -1}>
-            <span className="puff-ring" aria-hidden="true" /><span>Take a puff</span>
-          </button>
-        </div>
+        <Intro />
         <div className="stage-words" aria-hidden="true">
           <p className={words === "mark" ? "on" : ""}>Every puff <em>leaves a mark.</em></p>
           <p className={words === "count" ? "on" : ""}>Alveo counts every puff <em>for you.</em></p>
@@ -166,27 +162,29 @@ export default function App() {
             <span>marks<br />left behind</span>
           </div>
           <p className="cap-heal">The poison washes out as you read. In the app, the lung picture tracks your week: an illustration, not a measurement.</p>
-          <button className="replay cursor-target" type="button" tabIndex={-1} onClick={() => { actions.replay(); scrollToId("hero"); }}>
+          <button className="replay cursor-target" type="button" tabIndex={-1} onClick={() => scrollToId("intro")}>
             <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8a5.5 5.5 0 1 0 1.7-4" /><path d="M2.5 2.5v3h3" /></svg>Replay</button>
         </div>
       </div>
 
       <main className="st-col">
+        {/* ---------------- intro (the words float on the stage; this is the scroll room for the breath) ---------------- */}
+        <section className="st-intro" id="intro"><h1 className="sr">Tastes like candy. Breathes like lead.</h1></section>
+
         {/* ---------------- hero ---------------- */}
         <section className="st-hero" id="hero">
           <p className="st-eyebrow st-in"><i /><ShinyText text={STATUS_LINE} color="#a1a1aa" shineColor="#ffffff" speed={3.2} delay={1.4} shineWidth={30} /></p>
           {/* the headline comes into focus: noticing is the point */}
-          <h1 className="st-h1" aria-label="Notice every puff. Then have fewer.">
+          <h2 className="st-h1" aria-label="Notice every puff. Then have fewer.">
             <BlurText as="span" text="Notice every puff." className="st-h1-line" delay={110} stepDuration={0.45} blur={14} distance={26} />
             <span className="st-h1-line st-h1-line--2">{line2 && <BlurText as="span" text="Then have fewer." className="st-h1-line" delay={110} stepDuration={0.45} blur={14} distance={26} />}</span>
-          </h1>
+          </h2>
           <p className="st-lead st-in">Alveo uses your webcam to count the puffs you take at your desk, then helps you cut down, and possibly quit. It all runs on your computer.</p>
           <div className="st-ctas st-in">
             <Download os={os} />
             <a className="st-alt cursor-target" href={DOWNLOADS[other(os)] || "#download"}>or for {OS_NAME[other(os)]}</a>
           </div>
           <p className="st-trust st-in">Camera frames never leave your computer · works offline</p>
-          <a className="st-cue st-in cursor-target" href="#problem"><span>Scroll to see what one puff does</span><i aria-hidden="true" /></a>
         </section>
 
         {/* ---------------- 01 the problem (the poison spreads alongside) ---------------- */}
