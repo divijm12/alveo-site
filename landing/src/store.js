@@ -3,6 +3,7 @@ import { useSyncExternalStore } from "react";
 const state = {
   phase: "loading",   // loading | idle | docking | firing | running | done
   hoverVape: false,
+  chapter: "hero",    // hero | problem | solution | download (what the story column shows)
   destroyed: 0,       // dots destroyed so far
   total: 212,
   heal: 0,            // 0..1, driven by scroll in the product sections: damaged dots relight

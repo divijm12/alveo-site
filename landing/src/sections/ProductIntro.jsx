@@ -12,7 +12,7 @@ gsap.registerPlugin(ScrollTrigger);
 
 /* ---------- plan data (mirrors quit_plan.PACES in the app) ---------- */
 const TOTAL_DAYS = 90;
-const PACES = [
+export const PACES = [
   { id: "fast", name: "Fast", span: "2 weeks", steps: [[5, 0.75], [10, 0.5], [14, 0.25]],
     detail: "75% of your usual on days 1–5, 50% on days 6–10, 25% on days 11–14." },
   { id: "steady", name: "Steady", span: "4 weeks", steps: [[7, 0.8], [14, 0.6], [21, 0.4], [28, 0.2]],
@@ -25,7 +25,7 @@ const cutEnd = pace => pace.steps[pace.steps.length - 1][0];
 const holdAt = pace => pace.steps[pace.steps.length - 1][1];
 const pct = s => `${Math.round(s * 100)}%`;
 
-const TONES = [
+export const TONES = [
   { id: "gentle", name: "Gentle", note: "Supportive. The default.",
     line: "Only 9 left today. Want to try the urge timer before the next one?" },
   { id: "firm", name: "Firm", note: "Direct. No sugar-coating.",
@@ -50,7 +50,7 @@ function Eyebrow({ n, children }) {
 }
 
 // The logo: dot-halftone lungs from lung.json (same data the 3D scene uses).
-function LungMark({ className = "", id = "lm" }) {
+export function LungMark({ className = "", id = "lm" }) {
   const f = lung.fade;
   return (
     <svg className={className} viewBox="222 188 580 660" aria-hidden="true">
@@ -87,7 +87,7 @@ const STATUS = {
   over: { label: (left) => `✕ Over today's limit by ${-left}`, line: () => "You're over today's limit. That's okay. Want to try the urge timer?" },
 };
 
-function DeskMock({ count }) {
+export function DeskMock({ count }) {
   const limit = 60, left = limit - count;
   const status = count > limit ? "over" : count >= 0.8 * limit ? "close" : "ok";
   const fill = Math.min(1, count / limit);
@@ -134,7 +134,7 @@ function useWidth(initial) {
   return [ref, w];
 }
 
-function PaceChart({ sel }) {
+export function PaceChart({ sel }) {
   const [wrapRef, W] = useWidth(760);
   const [hover, setHover] = useState(null);
   const narrow = W < 560;
@@ -228,7 +228,7 @@ function PaceChart({ sel }) {
 }
 
 /* ---------- d. privacy flow ---------- */
-function Flow() {
+export function Flow() {
   return (
     <div className="pi-flow pi-rv" role="img" aria-label="Diagram: on your computer, the camera feeds an on-device model, which updates your count. Nothing goes to the cloud.">
       <div className="pi-flow__box">

@@ -1,9 +1,17 @@
 # Alveo 3D landing (draft, desktop)
 
-Interactive opening for getalveo.app: a matte-black vape floats on black; click it and it swings tip-down, docks in a
-mechanical windpipe and fires 3 glowing balls into the dot lungs of the Alveo logo. Each dot is its own physics body:
-a hit knocks it out (Brick Breaker), neighbours scorch. Ends on "Every puff leaves a mark."; scrolling continues into
-the product intro, and in the "Every puff you skip shows" section the lungs relight dot by dot.
+One scroll story beside a live 3D stage (fixed, framed on the right; the story is a column on the left). The
+Download button is in the nav the whole time.
+
+1. **Hero**: what Alveo is + Download (OS-aware: Mac or Windows) above the fold. The vape floats on the right.
+2. **01 The problem**: scrolling in fires the vape: it docks in a mechanical windpipe and 3 balls knock out the
+   logo's dots (each its own physics body, Brick Breaker) while three short beats tell the problem. Ends on
+   "Every puff leaves a mark."
+3. **02 How it helps**: counting (menu bar + puff card), cut-down paces + tones, privacy, a mid-page Download.
+   The lungs relight dot by dot as you read (if you got here early, the game fast-forwards first).
+4. **03 Download**: both platforms, beside healthy, breathing lungs.
+
+Download URLs live in `src/config.js` (empty for now: buttons then jump to the Download section).
 
 Separate from the live coming-soon page (`../index.html`), which is unchanged.
 
@@ -24,7 +32,9 @@ node tools/shoot.mjs name 1440 900 --fire --at=2,5,12   # screenshots in shots/ 
 | `src/scene/Airway.jsx` | C-ring windpipe and docking port |
 | `src/scene/Vape.jsx` | procedural box mod (no external assets) |
 | `src/scene/Balls.jsx`, `Effects.jsx` | balls + trails + lights; pooled sparks, shards, shockwaves, impact light, shake |
-| `src/sections/ProductIntro.jsx` | product sections (ScrollTrigger); `#heal` drives `store.heal` |
+| `src/App.jsx`, `src/story.css` | the page: nav, story column, scroll triggers (fire on #problem, heal across #solution) |
+| `src/sections/ProductIntro.jsx` | the mocks reused by the page (menu bar + puff card, pace chart, privacy diagram) |
+| `src/config.js` | download links (TODO) |
 
 Numbers (Intel Arc iGPU, Chrome, 1440x900): 60 fps during the run; one game destroys ~85-92 of 212 dots in ~10-12 s.
 Rendering stops while the scene is hidden under the product sections. Reduced motion: still end state, no effects.

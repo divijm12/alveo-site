@@ -54,7 +54,7 @@ function roundedStroke(x1, y1, x2, y2, w) {                    // a stroke of th
 }
 
 export default function Lungs({ simRef }) {
-  const beads = useRef(), sockets = useRef(), inlayMat = useRef(), beadMat = useRef(), railMat = useRef();
+  const beads = useRef(), sockets = useRef(), inlayMat = useRef(), beadMat = useRef(), railMat = useRef(), group = useRef();
   const n = lung.dots.length;
 
   const { beadGeo, socketGeo, plateGeo, inlayGeo, railGeo, attrs, base, order } = useMemo(() => {
@@ -97,7 +97,10 @@ export default function Lungs({ simRef }) {
   const c = new THREE.Color();
   useFrame((state, dt) => {
     const sim = simRef.current; if (!sim) return;
-    const { heal, phase } = store.get();
+    const { phase } = store.get(), heal = phase === "done" ? store.get().heal : 0;   // relight only after the game
+    // fully healed lungs breathe (slow swell of the whole machine)
+    const breath = heal * Math.sin(state.clock.elapsedTime * 1.25);
+    group.current.scale.setScalar(1 + 0.014 * breath);
     const t = sim.time, idle = phase === "idle" || phase === "loading" || phase === "docking";
     const breathe = 1 + Math.sin(state.clock.elapsedTime * 1.3) * 0.06;  // slow idle "breathing" of the glow
     for (let i = 0; i < n; i++) {
@@ -133,7 +136,7 @@ export default function Lungs({ simRef }) {
   });
 
   return (
-    <group>
+    <group ref={group} position={[0, 0.85, 0]}><group position={[0, -0.85, 0]}>
       <mesh geometry={plateGeo} position={[0, 0, PLATE_Z - 0.14]} receiveShadow>
         <meshPhysicalMaterial color="#0c0c0f" metalness={0.75} roughness={0.42} clearcoat={0.35} clearcoatRoughness={0.4} />
       </mesh>
@@ -158,7 +161,7 @@ export default function Lungs({ simRef }) {
       <instancedMesh ref={beads} args={[beadGeo, undefined, n]} frustumCulled={false}>
         <shaderMaterial ref={beadMat} vertexShader={beadVert} fragmentShader={beadFrag} uniforms={{ uTime: { value: 0 } }} />
       </instancedMesh>
-    </group>
+    </group></group>
   );
 }
 

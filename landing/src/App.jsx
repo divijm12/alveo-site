@@ -1,105 +1,223 @@
-import { Suspense, lazy, useLayoutEffect, useRef } from "react";
+// The page: one scroll story beside a live 3D stage (fixed, framed on the right).
+//   Hero: what Alveo is + Download, straight away.
+//   01 Problem: scrolling in fires the vape; the pinballs wreck the lungs while the problem is told.
+//   02 Solution: how Alveo counts, plans and stays private; the lungs relight as you read.
+//   03 Download: the ask again, beside healthy, breathing lungs.
+// The Download button is in the nav the whole time.
+import { Suspense, lazy, useLayoutEffect, useMemo, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-const Experience = lazy(() => import("./scene/Experience.jsx"));   // 3D + physics in their own chunk: the page paints first
 import { useStore, store, actions } from "./store.js";
-import "./hero.css";
+import { DOWNLOADS, STATUS_LINE } from "./config.js";
+import { DeskMock, PaceChart, Flow, PACES, TONES } from "./sections/ProductIntro.jsx";
+import "./sections/sections.css";
+import "./story.css";
 
 gsap.registerPlugin(ScrollTrigger);
-const sectionMods = import.meta.glob("./sections/ProductIntro.jsx", { eager: true });
-const ProductIntro = sectionMods["./sections/ProductIntro.jsx"]?.default ?? (() => null);
+const Experience = lazy(() => import("./scene/Experience.jsx"));   // 3D + physics in their own chunk: the page paints first
+
+const OS_NAME = { mac: "Mac", windows: "Windows" };
+function detectOS() {
+  const p = (navigator.userAgentData?.platform || navigator.platform || navigator.userAgent || "").toLowerCase();
+  return p.includes("win") ? "windows" : "mac";
+}
+const other = os => (os === "mac" ? "windows" : "mac");
+
+function Download({ os, size = "lg", label, className = "" }) {
+  const url = DOWNLOADS[os];
+  return (
+    <a className={`dl dl--${size} ${className}`} href={url || "#download"} {...(url ? { download: "" } : {})} data-os={os}>
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v8M4.5 7.5 8 11l3.5-3.5M3 13.5h10" /></svg>
+      <span>{label ?? `Download for ${OS_NAME[os]}`}</span>
+    </a>
+  );
+}
 
 export default function App() {
+  const os = useMemo(detectOS, []);
   const phase = useStore(s => s.phase), destroyed = useStore(s => s.destroyed), hover = useStore(s => s.hoverVape);
-  const dim = useRef(), hero = useRef(), msg = useRef();
+  const chapter = useStore(s => s.chapter);
+  const [pace, setPace] = useState("steady");
+  const [count, setCount] = useState(44);
+  const sel = PACES.find(p => p.id === pace);
+  const root = useRef(), deskRef = useRef();
 
   useLayoutEffect(() => {
     const ctx = gsap.context(() => {
-      // hero scrolls out: the camera drifts back and the stage dims under the product sections
-      ScrollTrigger.create({ trigger: hero.current, start: "top top", end: "bottom top", scrub: true,
-        onUpdate: s => store.set({ scroll: s.progress }) });
-      const setDim = gsap.quickSetter(dim.current, "opacity");
-      const update = () => {
-        const vh = innerHeight;
-        let o = Math.min(0.82, Math.max(0, (scrollY - vh * 0.35) / (vh * 0.9)) * 0.82);
-        const rec = document.getElementById("heal");               // the lungs come back for the recovery section
-        let focus = 0;
-        if (rec) {
-          const r = rec.getBoundingClientRect();
-          const inK = Math.min(1, Math.max(0, (vh - r.top) / (vh * 0.8))), outK = Math.min(1, Math.max(0, r.bottom / (vh * 0.8)));
-          focus = Math.min(inK, outK); focus = focus * focus * (3 - 2 * focus);
-          o *= 1 - focus;
-          // scrolled down without ever taking the puff: resolve the game instantly so there is damage to relight
-          if (r.top < vh * 1.6 && store.get().phase === "idle") actions.skipToEnd();
-        }
-        if (Math.abs(focus - store.get().focus) > 0.002) store.set({ focus });
-        document.documentElement.style.setProperty("--nav-bg", scrollY > vh * 0.6 ? "1" : "0");
-        setDim(o); store.set({ hidden: o > 0.8 && focus < 0.01 });
-      };
-      ScrollTrigger.create({ start: 0, end: "max", onUpdate: update, onRefresh: update });
-    });
+      // which chapter is on screen (nav highlight + stage caption)
+      ["hero", "problem", "solution", "download"].forEach(id => ScrollTrigger.create({
+        trigger: `#${id}`, start: "top 55%", end: "bottom 55%",
+        onToggle: s => s.isActive && store.set({ chapter: id }),
+      }));
+      // 01: scrolling into the problem takes the puff
+      ScrollTrigger.create({ trigger: "#problem", start: "top 70%", onEnter: () => actions.fire() });
+      // 02: the lungs relight across the solution chapter (jumped straight here? resolve the game first)
+      const heal = s => store.set({ heal: s.progress });
+      ScrollTrigger.create({
+        trigger: "#solution", start: "top 65%", end: "bottom 70%",
+        onEnter: () => { if (store.get().phase === "idle") actions.skipToEnd(); },
+        onUpdate: heal, onRefresh: heal,
+      });
+      const mm = gsap.matchMedia();
+      mm.add("(prefers-reduced-motion: no-preference)", () => {
+        gsap.from(".st-hero .st-in", { y: 24, autoAlpha: 0, duration: 1.2, ease: "expo.out", stagger: 0.08, delay: 0.2 });
+        gsap.set(".st-rv", { autoAlpha: 0 });
+        ScrollTrigger.batch(".st-rv", { start: "top 86%", once: true,
+          onEnter: els => gsap.fromTo(els, { y: 28, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 1.1, ease: "power3.out", stagger: 0.08, overwrite: true }) });
+        document.querySelectorAll(".st-beat h2").forEach(h => gsap.from(h.querySelectorAll(".pi-rise"), {
+          yPercent: 115, duration: 1.2, ease: "expo.out", stagger: 0.08, scrollTrigger: { trigger: h, start: "top 80%" } }));
+        gsap.fromTo(".pi-draw", { strokeDashoffset: 1 }, { strokeDashoffset: 0, ease: "none",
+          scrollTrigger: { trigger: ".pi-chart", start: "top 85%", end: "top 35%", scrub: 0.6 } });
+        ScrollTrigger.create({ trigger: deskRef.current, start: "top 85%", end: "center 45%", onUpdate: s => setCount(44 + Math.round(s.progress * 7)) });
+      });
+      mm.add("(prefers-reduced-motion: reduce)", () => setCount(51));
+    }, root);
+    document.fonts?.ready.then(() => ScrollTrigger.refresh());
     return () => ctx.revert();
   }, []);
 
-  // the end line rises word by word
-  useLayoutEffect(() => {
-    if (phase !== "done" || !msg.current) return;
-    const words = msg.current.querySelectorAll(".w > span"), after = msg.current.querySelectorAll(".after");
-    if (store.get().reducedMotion) { gsap.set(words, { yPercent: 0, y: 0, opacity: 1 }); gsap.set(after, { autoAlpha: 1 }); return; }
-    const t = gsap.timeline({ delay: 0.5 });
-    t.fromTo(words, { yPercent: 110, y: 0 }, { yPercent: 0, y: 0, duration: 1.1, ease: "expo.out", stagger: 0.07 })
-      .fromTo(msg.current.querySelectorAll(".after"), { autoAlpha: 0, y: 10 }, { autoAlpha: 1, y: 0, duration: 0.9, ease: "power2.out", stagger: 0.12 }, 0.6);
-    return () => t.kill();
-  }, [phase]);
+  const rise = lines => lines.map((l, i) => <span className="pi-mask" key={i}><span className="pi-rise">{l}</span></span>);
+  const marks = String(destroyed).padStart(3, "0");
 
-  const line = "Every puff leaves a mark.".split(" ");
   return (
-    <>
+    <div className="pi st" ref={root}>
       <div className="stage-wrap" aria-hidden="true">
         <Suspense fallback={null}><Experience /></Suspense>
-        <div className="stage-dim" ref={dim} />
+        <div className="stage-shade" />
       </div>
 
       <header className="nav">
-        <a className="wordmark" href="#top" aria-label="Alveo">ALVEO<span>.</span></a>
-        <span className="nav-pill">Coming soon · Mac &amp; Windows</span>
+        <a className="wordmark" href="#hero" aria-label="Alveo, back to top">ALVEO<span>.</span></a>
+        <nav className="nav-links" aria-label="Sections">
+          <a href="#problem" className={chapter === "problem" ? "on" : ""}>The problem</a>
+          <a href="#solution" className={chapter === "solution" ? "on" : ""}>How it helps</a>
+          <a href="#download" className={chapter === "download" ? "on" : ""}>Download</a>
+        </nav>
+        <Download os={os} size="sm" label="Download" className="nav-dl" />
       </header>
 
-      <section className="hero" ref={hero} id="top" data-phase={phase}>
-        <p className="sr">Interactive intro: clicking a vape fires three glowing balls down a mechanical windpipe into Alveo's dotted lungs, where they knock out the dots one by one. It ends on the damaged lungs and the words: Every puff leaves a mark.</p>
-
-        <div className="intro">
-          <p className="eyebrow">Alveo · for Mac and Windows</p>
-          <h1 className="intro-title">One puff.<br />Follow it down.</h1>
-        </div>
-
-        <div id="vape-anchor" className={"vape-anchor" + (hover ? " is-hover" : "")}>
-          <button className="puff" type="button" onClick={() => actions.fire()} disabled={phase !== "idle"}>
-            <span className="puff-ring" aria-hidden="true" />
-            <span>Take a puff</span>
+      {/* stage overlay: "take a puff" on the vape; caption + replay bottom right */}
+      <div className="stage-ui">
+        <div id="vape-anchor" className={"vape-anchor" + (hover ? " is-hover" : "")} data-phase={phase}>
+          <button className="puff" type="button" onClick={() => actions.fire()} disabled={phase !== "idle"} tabIndex={phase === "idle" ? 0 : -1}>
+            <span className="puff-ring" aria-hidden="true" /><span>Take a puff</span>
           </button>
         </div>
-
-        <div className="hud" aria-hidden="true">
-          <span className="hud-n">{String(destroyed).padStart(3, "0")}</span>
-          <span className="hud-l">marks<br />so far</span>
+        <div className={`stage-cap is-${chapter}`} data-phase={phase} aria-hidden="true">
+          <div className="cap-marks"><b>{marks}</b><span>marks<br />left behind</span></div>
+          <p className="cap-heal">The lungs relight as you read. In the app, the lung picture tracks your week: an illustration, not a measurement.</p>
+          <button className="replay" type="button" tabIndex={-1} onClick={() => { actions.replay(); document.getElementById("hero").scrollIntoView(); }}>
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8a5.5 5.5 0 1 0 1.7-4" /><path d="M2.5 2.5v3h3" /></svg>Again</button>
         </div>
+      </div>
 
-        <div className="end" ref={msg}>
-          <h2 className="end-line" aria-label="Every puff leaves a mark.">
-            {line.map((w, i) => <span className="w" key={i} aria-hidden="true"><span>{w}</span></span>)}
-          </h2>
-          <p className="after end-sub">Alveo notices each one, and helps you have fewer.</p>
-          <div className="after end-actions">
-            <a className="scroll-cue" href="#notice">See how it works <span aria-hidden="true">↓</span></a>
-            <button className="replay" type="button" onClick={() => actions.replay()}>
-              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8a5.5 5.5 0 1 0 1.7-4" /><path d="M2.5 2.5v3h3" /></svg>Again
-            </button>
+      <main className="st-col">
+        {/* ---------------- hero ---------------- */}
+        <section className="st-hero" id="hero">
+          <p className="st-eyebrow st-in"><i />{STATUS_LINE}</p>
+          <h1 className="st-h1 st-in">Notice every puff.<br /><span>Then have fewer.</span></h1>
+          <p className="st-lead st-in">Alveo uses your webcam to count the puffs you take at your desk, then helps you cut down, and possibly quit. It all runs on your computer.</p>
+          <div className="st-ctas st-in">
+            <Download os={os} />
+            <a className="st-alt" href={DOWNLOADS[other(os)] || "#download"}>or for {OS_NAME[other(os)]}</a>
           </div>
-        </div>
-      </section>
+          <p className="st-trust st-in">Camera frames never leave your computer · works offline</p>
+          <a className="st-cue st-in" href="#problem"><span>Scroll to see what one puff does</span><i aria-hidden="true" /></a>
+        </section>
 
-      <ProductIntro />
-    </>
+        {/* ---------------- 01 the problem (the pinballs run alongside) ---------------- */}
+        <section className="st-chapter" id="problem" aria-label="The problem">
+          <div className="st-beat">
+            <p className="pi-eyebrow"><span className="pi-eyebrow__n">01</span>The problem</p>
+            <h2 className="pi-title st-h2">{rise(["One puff takes", "two seconds."])}</h2>
+            <p className="pi-lead st-rv">Hit, exhale, back to the screen. Too quick to register, so nobody counts it.</p>
+          </div>
+          <div className="st-beat">
+            <h2 className="pi-title st-h2">{rise(["At your desk,", "it's always in reach."])}</h2>
+            <p className="pi-lead st-rv">Between emails. On calls. While you think. The puffs add up quietly, all day.</p>
+          </div>
+          <div className="st-beat">
+            <h2 className="pi-title st-h2">{rise(["You can't cut", "what you can't see."])}</h2>
+            <p className="pi-lead st-rv">A guess is easy. A real number is what lets you bring it down.</p>
+          </div>
+          <div className="st-beat st-beat--mark">
+            <h2 className="pi-title st-h2 st-mark">{rise(["Every puff", "leaves a mark."])}</h2>
+          </div>
+        </section>
+
+        {/* ---------------- 02 the solution (lungs relight) ---------------- */}
+        <section className="st-chapter" id="solution" aria-label="How Alveo helps">
+          <div className="st-block">
+            <p className="pi-eyebrow st-rv"><span className="pi-eyebrow__n">02</span>How Alveo helps</p>
+            <h2 className="pi-title st-h2 st-rv">Alveo counts every puff for you.</h2>
+            <p className="pi-lead st-rv">It watches for the vape at your lips while you work and keeps today's count in your menu bar (the system tray on Windows). After each puff, a small card shows where you stand.</p>
+            <div className="st-mock st-rv" ref={deskRef}><DeskMock count={count} /></div>
+            <ul className="pi-points st-rv">
+              <li><b>Today's count, always in view</b><span>51/60: puffs so far against today's limit.</span></li>
+              <li><b>A 30-second urge timer, one click away</b><span>Ride out a craving instead of reaching for the vape.</span></li>
+              <li><b>It learns from you</b><span>Wrong call? Tap “Not a vape” and it learns.</span></li>
+            </ul>
+            <p className="pi-fine st-rv">It counts what it can see: puffs at your desk, in front of the camera.</p>
+          </div>
+
+          <aside className="st-midcta st-rv" aria-label="Download">
+            <div><b>Try it at your desk.</b><span>{STATUS_LINE}</span></div>
+            <Download os={os} size="md" />
+          </aside>
+
+          <div className="st-block">
+            <h2 className="pi-title st-h2 st-rv">Then it helps you cut down.</h2>
+            <p className="pi-lead st-rv">Pick a pace and your daily limit steps down from your usual. Every plan runs about 90 days. A zero-puff goal is offered at the end, never forced.</p>
+            <div className="pi-panel st-panel st-rv">
+              <div className="pi-seg" role="radiogroup" aria-label="Pace">
+                {PACES.map(p => (
+                  <button key={p.id} role="radio" aria-checked={pace === p.id} className={pace === p.id ? "is-on" : ""} onClick={() => setPace(p.id)}>
+                    <b>{p.name}</b><span>{p.span}</span>{p.id === "steady" && <em>Default</em>}
+                  </button>
+                ))}
+              </div>
+              <PaceChart sel={pace} />
+              <p className="pi-panel__detail"><b>{sel.name} · {sel.span}.</b> {sel.detail}</p>
+            </div>
+            <div className="st-tones st-rv">
+              <p className="st-tones__h">Pick how it talks to you</p>
+              {TONES.map(t => (
+                <div key={t.id} className={`st-tone st-tone--${t.id}`}>
+                  <span className="pi-chip">{t.name}</span>
+                  <q>{t.line}</q>
+                  {t.id === "brutal" && <em>opt-in</em>}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="st-block">
+            <h2 className="pi-title st-h2 st-rv">Nothing leaves your desk.</h2>
+            <p className="pi-lead st-rv">Alveo looks for the vape on your own computer. Camera frames are never uploaded, and it keeps counting with the Wi-Fi off.</p>
+            <div className="st-rv"><Flow /></div>
+            <ul className="pi-points st-rv">
+              <li><b>On-device model</b><span>The detector runs on your computer's own chip. No server in the loop.</span></li>
+              <li><b>Quiet in meetings</b><span>On a call or sharing your screen? Meeting mode keeps counting but shows nothing.</span></li>
+            </ul>
+          </div>
+        </section>
+
+        {/* ---------------- 03 download ---------------- */}
+        <section className="st-chapter st-final" id="download" aria-label="Download Alveo">
+          <p className="pi-eyebrow st-rv"><span className="pi-eyebrow__n">03</span>Download</p>
+          <h2 className="pi-title st-h2 st-rv">See your number.<br />Then lower it.</h2>
+          <p className="pi-lead st-rv">Alveo is in beta for Mac and Windows. Download it, allow the camera, and it starts counting.</p>
+          <div className="st-ctas st-rv">
+            <Download os={os} />
+            <Download os={other(os)} size="ghost" />
+          </div>
+          <p className="st-trust st-rv">18+ · Not a medical device · Camera frames never leave your computer</p>
+          <footer className="st-foot">
+            <span className="wordmark">ALVEO<span>.</span></span>
+            <span>© 2026 Alveo</span>
+          </footer>
+        </section>
+      </main>
+    </div>
   );
 }

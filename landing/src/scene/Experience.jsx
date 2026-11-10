@@ -23,23 +23,13 @@ const TIP = 1.8;                     // distance from the vape's centre to its m
 
 // ---------- camera shots (centre + box to fit), from the aspect ratio ----------
 function fitDist(w, h, aspect) { const t = Math.tan((FOV * Math.PI) / 360); return Math.max(h / 2 / t, w / 2 / (t * aspect)); }
+// Every shot is framed for the right side of the screen: the story column sits on the left, and useFrame shifts
+// camera + target sideways by SIDE x the visible width (a parallel shift, so no extra perspective skew).
+const SIDE = 0.235;
 const SHOTS = {
-  // recovery section: text pinned left on landscape, at the bottom on portrait -> lungs right / high
-  heal: a => {
-    const s = SHOTS.play(a), t = Math.tan((FOV * Math.PI) / 360);
-    if (a > 1.05) { const W = 2 * s.z * t * a, dx = -0.15 * W; return { ...s, x: s.x + dx, tx: dx }; }
-    // lungs (y -2.9..4.6, centre ~0.85) into the top ~58% of a portrait screen
-    const z = Math.max(fitDist(7.2, 0, a), fitDist(0, 7.8 / 0.56, a)), H = 2 * z * t, cy = 0.85 - 0.2 * H;
-    return { x: 0, y: cy - 0.3, z, tx: 0, ty: cy, tz: 0 };
-  },
-  hero: a => { const d = fitDist(a < 0.8 ? 4.3 : 5.6, 3.6, a); return { x: 0, y: VAPE_Y - 0.25, z: d, tx: 0, ty: VAPE_Y - 0.1, tz: 0 }; },
-  wide: a => { const d = fitDist(7.2, 12.4, a); return { x: d * 0.16, y: 2.2, z: d, tx: 0, ty: 2.7, tz: 0 }; },
-  play: a => {
-    const w = 6.8, h = 10.9, d = fitDist(w, h, a);
-    const visH = 2 * d * Math.tan((FOV * Math.PI) / 360), extra = Math.max(0, visH - h);
-    const cy = -0.55 + extra * 0.2;                             // tall phones: lungs ride higher, words below
-    return { x: d * 0.07, y: cy - 0.35, z: d, tx: 0, ty: cy, tz: 0 };
-  },
+  hero: a => { const d = fitDist(9.4, 5.4, a); return { x: 0, y: VAPE_Y - 0.3, z: d, tx: 0, ty: VAPE_Y - 0.15, tz: 0 }; },
+  wide: a => { const d = fitDist(5.6, 13.4, a); return { x: d * 0.12, y: 2.3, z: d, tx: 0, ty: 2.75, tz: 0 }; },
+  play: a => { const d = fitDist(5.2, 11.9, a); return { x: d * 0.07, y: 0.45, z: d, tx: 0, ty: 0.7, tz: 0 }; },
 };
 
 export default function Experience() {
@@ -76,18 +66,12 @@ const PlaceholderVape = forwardRef(function PlaceholderVape(props, ref) {
 const VapeModel = vapeMods["./Vape.jsx"]?.default ?? PlaceholderVape;
 
 function Director() {
-  const { camera, size, gl, setFrameloop } = useThree();
-  // nothing to see under the product sections and nothing running: stop drawing frames (battery)
-  useEffect(() => store.subscribe(() => {
-    const s = store.get(), idle = s.hidden && s.phase !== "running" && s.phase !== "docking";
-    setFrameloop(idle ? "never" : "always");
-  }), [setFrameloop]);
+  const { camera, size } = useThree();
   const simRef = useRef(null), vape = useRef(), dock = useRef({ dock: 0 });
   // animated proxies (GSAP writes, useFrame reads)
   const V = useRef({ x: 0, y: VAPE_Y, rz: 0, ry: -0.35, float: 1, fire: 0, hover: 0, scale: 1 }).current;
   const C = useRef({ ...SHOTS.hero(size.width / size.height) }).current;
   const shot = useRef("hero"), tl = useRef(null), pointer = useRef({ x: 0, y: 0, sx: 0, sy: 0 });
-  const healShot = useRef(SHOTS.heal(size.width / size.height));
 
   const goShot = (name, dur = 2, ease = "power3.inOut", extra = {}) => {
     shot.current = name;
@@ -117,7 +101,6 @@ function Director() {
 
   // keep the current shot framed on resize
   useEffect(() => {
-    healShot.current = SHOTS.heal(size.width / size.height);
     if (!gsap.isTweening(C)) Object.assign(C, SHOTS[shot.current](size.width / size.height));
   }, [size.width, size.height]);
 
@@ -182,8 +165,9 @@ function Director() {
   useFrame((state, rawDt) => {
     const dt = Math.min(rawDt, 0.05), t = state.clock.elapsedTime;
     const sim = simRef.current;
-    if (sim) sim.update(dt);
-    const { scroll, hoverVape, focus } = store.get();
+    const { hoverVape, heal, phase } = store.get();
+    // reader already reached the healing part while balls still fly: fast-forward to the end
+    if (sim) sim.update(heal > 0.001 && phase === "running" ? dt * 5 : dt);
     // vape: idle float + pointer tilt, hover glow, fire
     const p = pointer.current; p.sx += (p.x - p.sx) * Math.min(1, dt * 3); p.sy += (p.y - p.sy) * Math.min(1, dt * 3);
     V.hover += ((hoverVape ? 1 : 0) - V.hover) * Math.min(1, dt * 6);
@@ -197,9 +181,9 @@ function Director() {
     shake.amp *= Math.exp(-dt * 5);
     const sx = (Math.sin(t * 61) + Math.sin(t * 37)) * shake.amp * 0.5, sy = (Math.cos(t * 53) + Math.sin(t * 29)) * shake.amp * 0.5;
     const par = 0.18;
-    const H = healShot.current, f = focus, k = 1 - f, so = scroll * k;
-    camera.position.set((C.x + p.sx * par) * k + H.x * f + sx, (C.y - p.sy * par * 0.6) * k + H.y * f + sy - so * 1.2, C.z * k + H.z * f + so * 2.5);
-    look.set(C.tx * k + H.tx * f + sx * 0.5, C.ty * k + H.ty * f + sy * 0.5 - so * 1.6, C.tz);
+    const side = -SIDE * 2 * C.z * Math.tan((FOV * Math.PI) / 360) * (size.width / size.height);
+    camera.position.set(C.x + side + p.sx * par + sx, C.y - p.sy * par * 0.6 + sy, C.z);
+    look.set(C.tx + side + sx * 0.5, C.ty + sy * 0.5, C.tz);
     camera.lookAt(look);
     // the "Take a puff" label follows the vape on screen
     const hint = document.getElementById("vape-anchor");
@@ -212,7 +196,6 @@ function Director() {
   const onOver = e => { e.stopPropagation(); if (store.get().phase === "idle") { store.set({ hoverVape: true }); document.body.style.cursor = "pointer"; } };
   const onOut = () => { store.set({ hoverVape: false }); document.body.style.cursor = ""; };
   const onClick = e => { e.stopPropagation(); actions.fire(); };
-  void gl;
   return (
     <>
       <VapeModel ref={vape} onPointerOver={onOver} onPointerOut={onOut} onClick={onClick} />
