@@ -40,3 +40,22 @@ node tools/shoot.mjs name 1440 900 --fire --at=2,5,12   # screenshots in shots/ 
 Numbers (Intel Arc iGPU, Chrome, 1440x900): 60 fps during the run; one game destroys ~85-92 of 212 dots in ~10-12 s.
 Rendering stops while the scene is hidden under the product sections. Reduced motion: still end state, no effects.
 Download: ~1.7 MB gzipped (3D chunk lazy-loaded; most of it is three.js + the Rapier WASM).
+
+## React Bits (src/bits/)
+
+Nine components copied from [React Bits](https://reactbits.dev) (the library is copy-in by design), each with its
+licence header: MIT + Commons Clause, so free to use in this site; the components may not be sold or redistributed on
+their own. Where they're used:
+
+| Component | Where / why |
+|---|---|
+| BlurText (edited: `as` prop) | hero headline comes into focus (the theme: noticing) |
+| ScrollReveal | the three problem beats sharpen word by word with scroll, each word passing through red |
+| SplitFlapText | "marks left behind" counter flips like a departure board (mechanical, like the lungs); throttled to 5/s |
+| Magnet + ClickSpark | every Download button leans toward the cursor; a click throws red sparks like a pinball impact |
+| SpotlightCard | the mid-page and final download cards: a red light follows the cursor |
+| GlareHover | a glass glare sweeps over the menu-bar / puff-card mock on hover |
+| GradualBlur | progressive blur under the nav as the story scrolls beneath it |
+| ShinyText | a slow sheen across the "Beta · Mac and Windows" pill |
+
+Cost: +65 KB gzipped on the first chunk (mostly `motion`, used only by BlurText). 60 fps unchanged.
