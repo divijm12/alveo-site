@@ -1,7 +1,7 @@
 // The page: one scroll story beside a live 3D stage (fixed, framed on the right).
 //   Hero: what Alveo is + Download, straight away.
-//   01 Problem: scrolling in fires the vape; the pinballs wreck the lungs while the problem is told.
-//   02 Solution: how Alveo counts, plans and stays private; the lungs relight as you read.
+//   01 Problem: scrolling in fires the vape; the vapor poisons the lungs while the problem is told.
+//   02 Solution: how Alveo counts, plans and stays private; the poison washes out as you read.
 //   03 Download: the ask again, beside healthy, breathing lungs.
 // The Download button is in the nav the whole time.
 import { Suspense, lazy, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -13,9 +13,7 @@ import { scrollToId } from "./smooth.js";
 import { DeskMock, PaceChart, Flow, PACES, TONES } from "./sections/ProductIntro.jsx";
 import BlurText from "./bits/BlurText.jsx";
 import ScrollReveal from "./bits/ScrollReveal.jsx";
-import SplitFlapText from "./bits/SplitFlapText.jsx";
 import Magnet from "./bits/Magnet.jsx";
-import ClickSpark from "./bits/ClickSpark.jsx";
 import SpotlightCard from "./bits/SpotlightCard.jsx";
 import GlareHover from "./bits/GlareHover.jsx";
 import GradualBlur from "./bits/GradualBlur.jsx";
@@ -34,23 +32,20 @@ function detectOS() {
 }
 const other = os => (os === "mac" ? "windows" : "mac");
 
-// Download button: leans toward the cursor (Magnet) and throws red sparks on click, like a pinball impact.
+// Download button: leans gently toward the cursor (Magnet).
 function Download({ os, size = "lg", label, className = "" }) {
   const url = DOWNLOADS[os], ghost = size === "ghost";
   return (
     <Magnet padding={size === "sm" ? 40 : 70} magnetStrength={ghost ? 9 : 6} maxOffset={size === "sm" ? 6 : 12} wrapperClassName={`dl-wrap ${className}`}>
-      <ClickSpark sparkColor={ghost ? ["#f4f4f5", "#a1a1aa"] : ["#ff3a33", "#ff8a5c", "#ffd2c4"]} sparkCount={12} sparkRadius={size === "sm" ? 28 : 42}
-        sparkSize={10} duration={520} glow={ghost ? 0 : 0.6} style={{ display: "inline-block", width: "auto", height: "auto" }}>
-        <a className={`dl dl--${size} cursor-target`} href={url || "#download"} {...(url ? { download: "" } : {})} data-os={os}>
-          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v8M4.5 7.5 8 11l3.5-3.5M3 13.5h10" /></svg>
-          <span>{label ?? `Download for ${OS_NAME[os]}`}</span>
-        </a>
-      </ClickSpark>
+      <a className={`dl dl--${size} cursor-target`} href={url || "#download"} {...(url ? { download: "" } : {})} data-os={os}>
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v8M4.5 7.5 8 11l3.5-3.5M3 13.5h10" /></svg>
+        <span>{label ?? `Download for ${OS_NAME[os]}`}</span>
+      </a>
     </Magnet>
   );
 }
 
-// the marks counter flips like a departure board; dots fall fast, so it settles at most ~5 times a second
+// the marks counter: a quiet number; patches die fast, so it updates at most ~6 times a second
 function useThrottled(value, ms) {
   const [v, setV] = useState(value); const last = useRef(0), timer = useRef(0);
   useEffect(() => {
@@ -64,9 +59,7 @@ function useThrottled(value, ms) {
 
 // Small live pieces subscribe to the store themselves, so the whole page doesn't re-render ~10 times a second.
 function Marks() {
-  const marks = String(useThrottled(useStore(s => s.destroyed), 200)).padStart(3, "0");
-  return <SplitFlapText text={marks} charset="0123456789" padTo={3} intro={false} loop={false} flipsPerChar={2} flipDuration={0.06} stagger={0.03}
-    fontSize={30} tileColor="#140708" textColor="#ff3a33" tileRadius={6} gap={4} glare={0.35} depth={0.7} className="cap-flap" />;
+  return <b>{useThrottled(useStore(s => s.destroyed), 160)}</b>;
 }
 function LiveDesk() { return <DeskMock count={useStore(s => s.deskCount)} />; }
 
@@ -126,9 +119,9 @@ export default function App() {
   }, []);
   useEffect(() => { if (!stageReady) return; const t = setTimeout(() => setCursorOn(true), 400); return () => clearTimeout(t); }, [stageReady]);
   useEffect(() => { const t = setTimeout(() => setLine2(true), 450); return () => clearTimeout(t); }, []);
-  // problem beats: words come into focus as you scroll, each passing through red (heat) on the way
+  // problem beats: words come into focus as you scroll, each passing through the poison's green on the way
   const reveal = { containerClassName: "pi-title st-h2 st-sr", baseOpacity: 0.08, enableBlur: true, blurStrength: 9, baseRotation: 0,
-    highlightColor: "#ff3a33", smoothing: 0.5, stagger: 0.06, wordAnimationEnd: "center 48%" };
+    highlightColor: "#a6d13a", smoothing: 0.5, stagger: 0.06, wordAnimationEnd: "center 48%" };
 
   return (
     <div className="pi st" ref={root}>
@@ -172,9 +165,9 @@ export default function App() {
             <Marks />
             <span>marks<br />left behind</span>
           </div>
-          <p className="cap-heal">The lungs relight as you read. In the app, the lung picture tracks your week: an illustration, not a measurement.</p>
+          <p className="cap-heal">The poison washes out as you read. In the app, the lung picture tracks your week: an illustration, not a measurement.</p>
           <button className="replay cursor-target" type="button" tabIndex={-1} onClick={() => { actions.replay(); scrollToId("hero"); }}>
-            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8a5.5 5.5 0 1 0 1.7-4" /><path d="M2.5 2.5v3h3" /></svg>Again</button>
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8a5.5 5.5 0 1 0 1.7-4" /><path d="M2.5 2.5v3h3" /></svg>Replay</button>
         </div>
       </div>
 
@@ -196,7 +189,7 @@ export default function App() {
           <a className="st-cue st-in cursor-target" href="#problem"><span>Scroll to see what one puff does</span><i aria-hidden="true" /></a>
         </section>
 
-        {/* ---------------- 01 the problem (the pinballs run alongside) ---------------- */}
+        {/* ---------------- 01 the problem (the poison spreads alongside) ---------------- */}
         <section className="st-chapter" id="problem" aria-label="The problem">
           <div className="st-beat">
             <p className="pi-eyebrow"><span className="pi-eyebrow__n">01</span>The problem</p>
@@ -215,7 +208,7 @@ export default function App() {
           <p className="sr">Every puff leaves a mark.</p>
         </section>
 
-        {/* ---------------- 02 the solution (lungs relight) ---------------- */}
+        {/* ---------------- 02 the solution (the poison washes out) ---------------- */}
         <section className="st-chapter" id="solution" aria-label="How Alveo helps">
           <div className="st-block">
             <p className="pi-eyebrow st-rv"><span className="pi-eyebrow__n">02</span>How Alveo helps</p>

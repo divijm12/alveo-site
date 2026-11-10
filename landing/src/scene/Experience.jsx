@@ -1,5 +1,5 @@
-// The 3D stage and its director. Owns the physics, the vape choreography (float -> swing tip-down -> dock in the
-// windpipe port -> fire -> lift away) and the camera shots, all on GSAP timelines. Shots are framed from the
+// The 3D stage and its director. Owns the poison simulation, the vape choreography (float -> swing tip-down -> dock
+// in the windpipe port -> exhale -> lift away) and the camera shots, all on GSAP timelines. Shots are framed from the
 // viewport's aspect so phones get the same composition as desktops.
 import { Suspense, forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
@@ -11,15 +11,15 @@ import gsap from "gsap";
 import Studio from "./Studio.jsx";
 import Lungs from "./Lungs.jsx";
 import Airway, { PORT_Y } from "./Airway.jsx";
-import Balls from "./Balls.jsx";
-import Effects, { fx, shake } from "./Effects.jsx";
-import { LungSim, initRapier } from "../sim/LungSim.js";
+import Toxin from "./Toxin.jsx";
+import { LungSim } from "../sim/LungSim.js";
 import { store, actions } from "../store.js";
 
 const vapeMods = import.meta.glob("./Vape.jsx", { eager: true });
 const FOV = 35;
 export const VAPE_Y = 7.3;          // hero: the vape floats here, well above the windpipe port (y ≈ 4.4)
 const TIP = 1.8;                     // distance from the vape's centre to its mouthpiece tip (placeholder; updated from the model)
+const shake = { amp: 0 };            // camera shake (a small thud when the vape docks)
 
 // ---------- camera shots (centre + box to fit), from the aspect ratio ----------
 function fitDist(w, h, aspect) { const t = Math.tan((FOV * Math.PI) / 360); return Math.max(h / 2 / t, w / 2 / (t * aspect)); }
@@ -71,9 +71,9 @@ function Director() {
   const { camera, size, gl, scene, setFrameloop } = useThree();
   const content = useRef(), ready = useRef({ sim: false, gpu: false });
   // Shaders compile in parallel, off the main thread, BEFORE the scene is first drawn. Drawing with a shader that isn't
-  // compiled yet blocks the page (measured: a 7.7 s freeze at load, 0.1-0.5 s stalls when the balls first appear).
-  // So: let the studio environment render alone for two frames, then stop drawing, make everything (incl. the
-  // game's hidden balls, trails, shockwaves) visible, compileAsync, hide them again and start drawing. The page and
+  // compiled yet blocks the page (measured: a 7.7 s freeze at load, 0.1-0.5 s stalls when effects first appear).
+  // So: let the studio environment render alone for two frames, then stop drawing, make everything (incl. anything
+  // hidden) visible, compileAsync, hide them again and start drawing. The page and
   // cursor stay responsive the whole time; the stage fades in when it's ready.
   useEffect(() => {
     let alive = true, n = 0, raf = 0;
@@ -121,21 +121,12 @@ function Director() {
     return gsap.to(C, { ...SHOTS[name](size.width / size.height), duration: dur, ease, overwrite: "auto", ...extra });
   };
 
-  // physics + event wiring
+  // simulation + event wiring
   useEffect(() => {
-    let alive = true;
-    initRapier().then(() => {
-      if (!alive) return;
-      const sim = new LungSim(); simRef.current = sim;
-      sim.on("kill", e => { fx.kill(e); store.set({ destroyed: e.destroyed }); });
-      sim.on("wall", e => fx.wall(e));
-      sim.on("clash", e => fx.clash(e));
-      sim.on("burst", e => fx.burst(e));
-      sim.on("spawn", b => fx.muzzle(b.x, b.y + 0.05));
-      sim.on("done", () => finish());
-      ready.current.sim = true; becomeReady();
-    });
-    return () => { alive = false; };
+    const sim = new LungSim(); simRef.current = sim;
+    const offs = [sim.on("kill", e => store.set({ destroyed: e.destroyed })), sim.on("done", () => finish())];
+    ready.current.sim = true; becomeReady();
+    return () => offs.forEach(f => f());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -170,7 +161,7 @@ function Director() {
       .to(V, { rz: -Math.PI / 2, duration: 1.2, ease: "power3.inOut" }, 0.1)
       .to(V, { y: dockY + 0.7, x: dockX, duration: 1.2, ease: "power3.inOut" }, 0.1)
       .to(V, { y: dockY, duration: 0.32, ease: "power4.in" }, 1.32)
-      .add(() => { shake.amp += 0.06; dock.current.dock = 1; fx.muzzle(0, PORT_Y); vape.current?.setScreen?.("PUFF"); }, 1.64)
+      .add(() => { shake.amp += 0.05; dock.current.dock = 1; vape.current?.setScreen?.("PUFF"); }, 1.64)
       .to(V, { fire: 1, duration: 0.35, ease: "power2.in" }, 1.7)
       .add(() => { store.set({ phase: "running" }); sim.release(); }, 1.95)
       .add(goShot("play", 2.6, "power2.inOut"), 2.5)
@@ -207,7 +198,7 @@ function Director() {
     const dt = Math.min(rawDt, 0.05), t = state.clock.elapsedTime;
     const sim = simRef.current;
     const { hoverVape, heal, phase } = store.get();
-    // reader already reached the healing part while balls still fly: fast-forward to the end
+    // reader already reached the healing part while the poison still spreads: fast-forward to the end
     if (sim) sim.update(heal > 0.001 && phase === "running" ? dt * 5 : dt);
     // vape: idle float + pointer tilt, hover glow, fire
     const p = pointer.current; p.sx += (p.x - p.sx) * Math.min(1, dt * 3); p.sy += (p.y - p.sy) * Math.min(1, dt * 3);
@@ -260,8 +251,7 @@ function Director() {
       <VapeModel ref={vape} onPointerOver={onOver} onPointerOut={onOut} onClick={onClick} />
       <Airway dockRef={dock} />
       <Lungs simRef={simRef} />
-      <Balls simRef={simRef} />
-      <Effects />
+      <Toxin simRef={simRef} />
     </group>
   );
 }
