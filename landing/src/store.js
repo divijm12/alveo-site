@@ -8,6 +8,8 @@ const state = {
   total: 212,
   heal: 0,            // 0..1, driven by scroll in the product sections: damaged dots relight
   scroll: 0,          // 0..1 over the hero's own scroll-out
+  stageReady: false,  // 3D compiled and drawing: the canvas fades in
+  deskCount: 44,      // the puff-card mock's count, ticks 44 -> 51 as it scrolls in
   hidden: false,      // stage fully dimmed under the sections: stop rendering
   focus: 0,           // 0..1 while the recovery section (#heal) is on screen: lungs reframed and undimmed
   reducedMotion: typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches,

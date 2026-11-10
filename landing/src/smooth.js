@@ -7,7 +7,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 gsap.registerPlugin(ScrollTrigger);
 export const lenis = new Lenis({
-  lerp: 0.085,                          // a little heavier than default: matches the slow, cinematic feel
+  lerp: 0.13,                           // smooth but responsive (heavier felt like lag)
   wheelMultiplier: 0.95,
   anchors: { duration: 1.6, easing: t => 1 - Math.pow(1 - t, 4) },
   stopInertiaOnNavigate: true,

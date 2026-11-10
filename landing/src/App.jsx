@@ -62,15 +62,22 @@ function useThrottled(value, ms) {
   return v;
 }
 
+// Small live pieces subscribe to the store themselves, so the whole page doesn't re-render ~10 times a second.
+function Marks() {
+  const marks = String(useThrottled(useStore(s => s.destroyed), 200)).padStart(3, "0");
+  return <SplitFlapText text={marks} charset="0123456789" padTo={3} intro={false} loop={false} flipsPerChar={2} flipDuration={0.06} stagger={0.03}
+    fontSize={30} tileColor="#140708" textColor="#ff3a33" tileRadius={6} gap={4} glare={0.35} depth={0.7} className="cap-flap" />;
+}
+function LiveDesk() { return <DeskMock count={useStore(s => s.deskCount)} />; }
+
 export default function App() {
   const os = useMemo(detectOS, []);
-  const phase = useStore(s => s.phase), destroyed = useStore(s => s.destroyed), hover = useStore(s => s.hoverVape);
+  const phase = useStore(s => s.phase), hover = useStore(s => s.hoverVape), stageReady = useStore(s => s.stageReady);
   const chapter = useStore(s => s.chapter);
   // which line shows under the lungs: the punchline once the game is over, then what Alveo does as they relight
   const words = useStore(s => s.phase === "done" && (s.chapter === "problem" || (s.chapter === "solution" && s.heal < 0.1)) ? "mark"
     : s.chapter === "solution" && s.heal >= 0.1 && s.heal < 0.6 ? "count" : "");
   const [pace, setPace] = useState("steady");
-  const [count, setCount] = useState(44);
   const sel = PACES.find(p => p.id === pace);
   const root = useRef(), deskRef = useRef();
 
@@ -100,17 +107,24 @@ export default function App() {
           yPercent: 115, duration: 1.2, ease: "expo.out", stagger: 0.08, scrollTrigger: { trigger: h, start: "top 80%" } }));
         gsap.fromTo(".pi-draw", { strokeDashoffset: 1 }, { strokeDashoffset: 0, ease: "none",
           scrollTrigger: { trigger: ".pi-chart", start: "top 85%", end: "top 35%", scrub: 0.6 } });
-        ScrollTrigger.create({ trigger: deskRef.current, start: "top 85%", end: "center 45%", onUpdate: s => setCount(44 + Math.round(s.progress * 7)) });
+        ScrollTrigger.create({ trigger: deskRef.current, start: "top 85%", end: "center 45%", onUpdate: s => store.set({ deskCount: 44 + Math.round(s.progress * 7) }) });
       });
-      mm.add("(prefers-reduced-motion: reduce)", () => setCount(51));
+      mm.add("(prefers-reduced-motion: reduce)", () => store.set({ deskCount: 51 }));
     }, root);
     document.fonts?.ready.then(() => ScrollTrigger.refresh());
     return () => ctx.revert();
   }, []);
 
   const rise = lines => lines.map((l, i) => <span className="pi-mask" key={i}><span className="pi-rise">{l}</span></span>);
-  const marks = String(useThrottled(destroyed, 200)).padStart(3, "0");
   const [line2, setLine2] = useState(false);
+  // start the 3D once the headline has focused in (or the browser is idle): its first GPU work stutters the page
+  const [stageOn, setStageOn] = useState(false), [cursorOn, setCursorOn] = useState(false);
+  useEffect(() => {
+    const start = () => setStageOn(true);
+    const id = window.requestIdleCallback ? requestIdleCallback(start, { timeout: 1200 }) : setTimeout(start, 900);
+    return () => (window.cancelIdleCallback ? cancelIdleCallback(id) : clearTimeout(id));
+  }, []);
+  useEffect(() => { if (!stageReady) return; const t = setTimeout(() => setCursorOn(true), 400); return () => clearTimeout(t); }, [stageReady]);
   useEffect(() => { const t = setTimeout(() => setLine2(true), 450); return () => clearTimeout(t); }, []);
   // problem beats: words come into focus as you scroll, each passing through red (heat) on the way
   const reveal = { containerClassName: "pi-title st-h2 st-sr", baseOpacity: 0.08, enableBlur: true, blurStrength: 9, baseRotation: 0,
@@ -118,12 +132,12 @@ export default function App() {
 
   return (
     <div className="pi st" ref={root}>
-      <div className="stage-wrap" aria-hidden="true">
-        <Suspense fallback={null}><Experience /></Suspense>
+      <div className={"stage-wrap" + (stageReady ? " is-ready" : "")} aria-hidden="true">
+        {stageOn && <Suspense fallback={null}><Experience /></Suspense>}
         <div className="stage-shade" />
       </div>
 
-      <GradualBlur target="page" position="top" height="7.5rem" strength={2.2} layers={6} curve="bezier" zIndex={25} />
+      <GradualBlur target="page" position="top" height="6.5rem" strength={2} layers={3} curve="bezier" zIndex={25} />
       <header className="nav">
         <a className="wordmark cursor-target" href="#hero" aria-label="Alveo, back to top">ALVEO<span>.</span></a>
         <nav className="nav-links" aria-label="Sections">
@@ -136,8 +150,9 @@ export default function App() {
 
       {/* the cursor: a detection reticle that locks onto anything you can press; on the vape it reports
           "vape 0.94" like Alveo's detector does */}
-      <TargetCursor cursorColor="#f4f4f5" cursorColorOnTarget="#ff3a33" blendMode="normal" spinDuration={7} hoverDuration={0.22}
-        size={26} cornerSize={10} thickness={2} padding={9} dotSize={4} parallaxOn />
+      {/* the reticle takes over only once the 3D is compiled and running: the system cursor can't freeze, ours can */}
+      {cursorOn && <TargetCursor cursorColor="#f4f4f5" cursorColorOnTarget="#ff3a33" blendMode="normal" spinDuration={7} hoverDuration={0.22}
+        size={26} cornerSize={10} thickness={2} padding={9} dotSize={4} parallaxOn />}
 
       {/* stage overlay: "take a puff" on the vape; caption + replay bottom right */}
       <div className="stage-ui">
@@ -154,8 +169,7 @@ export default function App() {
         </div>
         <div className={`stage-cap is-${chapter}`} data-phase={phase} aria-hidden="true">
           <div className="cap-marks">
-            <SplitFlapText text={marks} charset="0123456789" padTo={3} intro={false} loop={false} flipsPerChar={2} flipDuration={0.06} stagger={0.03}
-              fontSize={30} tileColor="#140708" textColor="#ff3a33" tileRadius={6} gap={4} glare={0.35} depth={0.7} className="cap-flap" />
+            <Marks />
             <span>marks<br />left behind</span>
           </div>
           <p className="cap-heal">The lungs relight as you read. In the app, the lung picture tracks your week: an illustration, not a measurement.</p>
@@ -209,7 +223,7 @@ export default function App() {
             <p className="pi-lead st-lead-xl st-rv">It watches for the vape at your lips while you work and keeps today's count in your menu bar (the system tray on Windows). After each puff, a small card shows where you stand.</p>
             <div className="st-mock st-rv" ref={deskRef}>
               <GlareHover width="100%" borderRadius="22px" glareColor="#ffffff" glareOpacity={0.22} glareSize={40} glareAngle={-40} transitionDuration={900} rimGlint className="st-glare">
-                <DeskMock count={count} />
+                <LiveDesk />
               </GlareHover>
             </div>
             <ul className="pi-points st-rv">

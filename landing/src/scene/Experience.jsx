@@ -1,7 +1,7 @@
 // The 3D stage and its director. Owns the physics, the vape choreography (float -> swing tip-down -> dock in the
 // windpipe port -> fire -> lift away) and the camera shots, all on GSAP timelines. Shots are framed from the
 // viewport's aspect so phones get the same composition as desktops.
-import { Suspense, forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from "react";
+import { Suspense, forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { EffectComposer, Bloom, Vignette, Noise, ToneMapping } from "@react-three/postprocessing";
 import { ToneMappingMode, BlendFunction } from "postprocessing";
@@ -37,17 +37,19 @@ export default function Experience() {
     const coarse = matchMedia("(pointer: coarse)").matches, cores = navigator.hardwareConcurrency || 4;
     const q = coarse || cores <= 4 ? "low" : "high"; store.set({ quality: q }); return q === "low";
   }, []);
-  const dprRef = useRef(low ? [1, 1.5] : [1, 2]);
+  // 1.5x is the ceiling: on a 2x screen that's 44% fewer pixels, invisible under bloom + grain. PerformanceMonitor
+  // lowers it further (down to 1x) if frames run slow on this machine.
+  const [dpr, setDpr] = useState(() => Math.min(window.devicePixelRatio || 1, low ? 1.25 : 1.5));
   return (
-    <Canvas className="stage" flat dpr={dprRef.current} gl={{ antialias: false, powerPreference: "high-performance", stencil: false }}
+    <Canvas className="stage" flat dpr={dpr} gl={{ antialias: false, powerPreference: "high-performance", stencil: false }}
       camera={{ fov: FOV, near: 0.1, far: 90, position: [0, VAPE_Y, 14] }}
-      onCreated={({ gl }) => { gl.setClearColor("#030304"); }}>
-      <PerformanceMonitor onDecline={({ factor }) => store.set({ quality: "low" }) || void factor} />
+      onCreated={({ gl }) => { gl.setClearColor("#030304"); gl.debug.checkShaderErrors = import.meta.env.DEV; /* the check blocks on parallel compiles */ }}>
+      <PerformanceMonitor flipflops={3} onDecline={() => { store.set({ quality: "low" }); setDpr(d => Math.max(1, +(d - 0.25).toFixed(2))); }} />
       <Suspense fallback={null}>
         <Studio />
         <Director />
       </Suspense>
-      <EffectComposer multisampling={low ? 0 : 4} frameBufferType={THREE.HalfFloatType}>
+      <EffectComposer multisampling={low || dpr > 1.2 ? 0 : 2} frameBufferType={THREE.HalfFloatType}>
         <Bloom mipmapBlur luminanceThreshold={0.85} luminanceSmoothing={0.2} intensity={low ? 0.9 : 1.15} radius={0.72} />
         <ToneMapping mode={ToneMappingMode.NEUTRAL} />
         <Vignette offset={0.28} darkness={0.78} />
@@ -66,7 +68,48 @@ const PlaceholderVape = forwardRef(function PlaceholderVape(props, ref) {
 const VapeModel = vapeMods["./Vape.jsx"]?.default ?? PlaceholderVape;
 
 function Director() {
-  const { camera, size } = useThree();
+  const { camera, size, gl, scene, setFrameloop } = useThree();
+  const content = useRef(), ready = useRef({ sim: false, gpu: false });
+  // Shaders compile in parallel, off the main thread, BEFORE the scene is first drawn. Drawing with a shader that isn't
+  // compiled yet blocks the page (measured: a 7.7 s freeze at load, 0.1-0.5 s stalls when the balls first appear).
+  // So: let the studio environment render alone for two frames, then stop drawing, make everything (incl. the
+  // game's hidden balls, trails, shockwaves) visible, compileAsync, hide them again and start drawing. The page and
+  // cursor stay responsive the whole time; the stage fades in when it's ready.
+  useEffect(() => {
+    let alive = true, n = 0, raf = 0;
+    const go = async () => {
+      const shown = [];
+      setFrameloop("never");
+      content.current.visible = true;
+      content.current.traverse(o => { if (!o.visible) { shown.push(o); o.visible = true; } });
+      // compile for the same kind of target we draw into (the post-processing buffer), not the screen:
+      // the shader variants differ, and compiling for the wrong one just compiles everything twice
+      const rt = new THREE.WebGLRenderTarget(4, 4, { type: THREE.HalfFloatType }), prev = gl.getRenderTarget();
+      gl.setRenderTarget(rt);
+      let job; try { job = gl.compileAsync ? gl.compileAsync(scene, camera) : gl.compile(scene, camera); } finally { gl.setRenderTarget(prev); }
+      try { await job; } catch (e) { console.warn(e); }
+      rt.dispose();
+      shown.forEach(o => (o.visible = false));
+      if (!alive) return;
+      setFrameloop("always");
+      ready.current.gpu = true; becomeReady();
+    };
+    const wait = () => { if (++n < 3) raf = requestAnimationFrame(wait); else go(); };
+    raf = requestAnimationFrame(wait);
+    return () => { alive = false; cancelAnimationFrame(raf); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  function becomeReady() {
+    if (!ready.current.sim || !ready.current.gpu || store.get().phase !== "loading") return;
+    const sim = simRef.current;
+    if (store.get().reducedMotion) {                          // no motion: show the end state straight away
+      sim.runInstant(); V.y = 30; Object.assign(C, SHOTS.play(size.width / size.height)); shot.current = "play";
+      store.set({ phase: "done", destroyed: sim.destroyed, stageReady: true });
+    } else store.set({ phase: "idle", stageReady: true });
+    // the reader got ahead of the loading: catch the story up
+    const ch = store.get().chapter;
+    if (ch === "problem") actions.fire(); else if (ch === "solution" || ch === "download") actions.skipToEnd();
+  }
   const simRef = useRef(null), vape = useRef(), dock = useRef({ dock: 0 });
   // animated proxies (GSAP writes, useFrame reads)
   const V = useRef({ x: 0, y: VAPE_Y, rz: 0, ry: -0.35, float: 1, fire: 0, hover: 0, scale: 1 }).current;
@@ -90,10 +133,7 @@ function Director() {
       sim.on("burst", e => fx.burst(e));
       sim.on("spawn", b => fx.muzzle(b.x, b.y + 0.05));
       sim.on("done", () => finish());
-      if (store.get().reducedMotion) {                        // no motion: show the end state straight away
-        sim.runInstant(); V.y = 30; Object.assign(C, SHOTS.play(size.width / size.height)); shot.current = "play";
-        store.set({ phase: "done", destroyed: sim.destroyed });
-      } else store.set({ phase: "idle" });
+      ready.current.sim = true; becomeReady();
     });
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -162,7 +202,7 @@ function Director() {
 
   const look = useMemo(() => new THREE.Vector3(), []);
   const corner = useMemo(() => new THREE.Vector3(), []), lastConf = useRef(0);
-  if (import.meta.env.DEV) window.__alveo = { camera, C, V, simRef, shake };
+  if (import.meta.env.DEV) window.__alveo = { camera, C, V, simRef, shake, gl, scene };
   useFrame((state, rawDt) => {
     const dt = Math.min(rawDt, 0.05), t = state.clock.elapsedTime;
     const sim = simRef.current;
@@ -216,12 +256,12 @@ function Director() {
   const onOut = () => { store.set({ hoverVape: false }); document.body.style.cursor = ""; };
   const onClick = e => { e.stopPropagation(); actions.fire(); };
   return (
-    <>
+    <group ref={content} visible={false}>
       <VapeModel ref={vape} onPointerOver={onOver} onPointerOut={onOut} onClick={onClick} />
       <Airway dockRef={dock} />
       <Lungs simRef={simRef} />
       <Balls simRef={simRef} />
       <Effects />
-    </>
+    </group>
   );
 }
