@@ -65,6 +65,9 @@ export default function App() {
   const os = useMemo(detectOS, []);
   const phase = useStore(s => s.phase), destroyed = useStore(s => s.destroyed), hover = useStore(s => s.hoverVape);
   const chapter = useStore(s => s.chapter);
+  // which line shows under the lungs: the punchline once the game is over, then what Alveo does as they relight
+  const words = useStore(s => s.phase === "done" && (s.chapter === "problem" || (s.chapter === "solution" && s.heal < 0.1)) ? "mark"
+    : s.chapter === "solution" && s.heal >= 0.1 && s.heal < 0.6 ? "count" : "");
   const [pace, setPace] = useState("steady");
   const [count, setCount] = useState(44);
   const sel = PACES.find(p => p.id === pace);
@@ -137,6 +140,10 @@ export default function App() {
             <span className="puff-ring" aria-hidden="true" /><span>Take a puff</span>
           </button>
         </div>
+        <div className="stage-words" aria-hidden="true">
+          <p className={words === "mark" ? "on" : ""}>Every puff <em>leaves a mark.</em></p>
+          <p className={words === "count" ? "on" : ""}>Alveo counts every puff <em>for you.</em></p>
+        </div>
         <div className={`stage-cap is-${chapter}`} data-phase={phase} aria-hidden="true">
           <div className="cap-marks">
             <SplitFlapText text={marks} charset="0123456789" padTo={3} intro={false} loop={false} flipsPerChar={2} flipDuration={0.06} stagger={0.03}
@@ -182,17 +189,16 @@ export default function App() {
             <ScrollReveal {...reveal}>You can't cut what you can't see.</ScrollReveal>
             <p className="pi-lead st-rv">A guess is easy. A real number is what lets you bring it down.</p>
           </div>
-          <div className="st-beat st-beat--mark">
-            <h2 className="pi-title st-h2 st-mark">{rise(["Every puff", "leaves a mark."])}</h2>
-          </div>
+          <div className="st-beat st-beat--quiet" aria-hidden="true" />
+          <p className="sr">Every puff leaves a mark.</p>
         </section>
 
         {/* ---------------- 02 the solution (lungs relight) ---------------- */}
         <section className="st-chapter" id="solution" aria-label="How Alveo helps">
           <div className="st-block">
             <p className="pi-eyebrow st-rv"><span className="pi-eyebrow__n">02</span>How Alveo helps</p>
-            <h2 className="pi-title st-h2 st-rv">Alveo counts every puff for you.</h2>
-            <p className="pi-lead st-rv">It watches for the vape at your lips while you work and keeps today's count in your menu bar (the system tray on Windows). After each puff, a small card shows where you stand.</p>
+            <h2 className="sr">Alveo counts every puff for you.</h2>
+            <p className="pi-lead st-lead-xl st-rv">It watches for the vape at your lips while you work and keeps today's count in your menu bar (the system tray on Windows). After each puff, a small card shows where you stand.</p>
             <div className="st-mock st-rv" ref={deskRef}>
               <GlareHover width="100%" borderRadius="22px" glareColor="#ffffff" glareOpacity={0.22} glareSize={40} glareAngle={-40} transitionDuration={900} rimGlint className="st-glare">
                 <DeskMock count={count} />
@@ -241,12 +247,8 @@ export default function App() {
 
           <div className="st-block">
             <h2 className="pi-title st-h2 st-rv">Nothing leaves your desk.</h2>
-            <p className="pi-lead st-rv">Alveo looks for the vape on your own computer. Camera frames are never uploaded, and it keeps counting with the Wi-Fi off.</p>
+            <p className="pi-lead st-rv">Alveo looks for the vape on your own computer. Camera frames are never uploaded, it keeps counting with the Wi-Fi off, and meeting mode hides it on calls.</p>
             <div className="st-rv"><Flow /></div>
-            <ul className="pi-points st-rv">
-              <li><b>On-device model</b><span>The detector runs on your computer's own chip. No server in the loop.</span></li>
-              <li><b>Quiet in meetings</b><span>On a call or sharing your screen? Meeting mode keeps counting but shows nothing.</span></li>
-            </ul>
           </div>
         </section>
 

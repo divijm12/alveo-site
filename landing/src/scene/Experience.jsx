@@ -29,7 +29,7 @@ const SIDE = 0.235;
 const SHOTS = {
   hero: a => { const d = fitDist(9.4, 5.4, a); return { x: 0, y: VAPE_Y - 0.3, z: d, tx: 0, ty: VAPE_Y - 0.15, tz: 0 }; },
   wide: a => { const d = fitDist(5.6, 13.4, a); return { x: d * 0.12, y: 2.3, z: d, tx: 0, ty: 2.75, tz: 0 }; },
-  play: a => { const d = fitDist(5.2, 11.9, a); return { x: d * 0.07, y: 0.45, z: d, tx: 0, ty: 0.7, tz: 0 }; },
+  play: a => { const d = fitDist(5.2, 11.9, a); return { x: d * 0.07, y: -0.05, z: d, tx: 0, ty: 0.2, tz: 0 }; },
 };
 
 export default function Experience() {

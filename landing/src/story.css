@@ -99,7 +99,7 @@
 @keyframes ping { 0% { box-shadow: 0 0 0 0 rgba(255,45,45,.55); } 70%, 100% { box-shadow: 0 0 0 12px rgba(255,45,45,0); } }
 .vape-anchor:not([data-phase="idle"]) .puff { opacity: 0; transform: translate(-50%, 30px); pointer-events: none; }
 
-.stage-cap { position: absolute; right: clamp(24px, 3vw, 48px); bottom: 32px; display: grid; justify-items: end; gap: 14px; text-align: right; max-width: 300px; }
+.stage-cap { position: absolute; right: clamp(24px, 3vw, 48px); top: 92px; display: grid; justify-items: end; gap: 14px; text-align: right; max-width: 300px; }
 .stage-cap > * { opacity: 0; transform: translateY(8px); transition: opacity .7s var(--ease), transform .9s var(--ease); }
 .cap-marks { display: flex; align-items: center; gap: 12px; }
 .cap-marks b { font-family: var(--display); font-weight: 300; font-size: 2.3rem; font-variant-numeric: tabular-nums; color: var(--red-hi); letter-spacing: .04em; }
@@ -138,3 +138,27 @@
 .st-glare.glare-hover { display: grid; place-items: stretch; }
 /* keep card content above the spotlight layers */
 .st-midcta > :not([class^="spotlight-card__"]), .st-finalcard > :not([class^="spotlight-card__"]) { position: relative; z-index: 3; }
+
+/* ---------- shorter story (the punchlines live on the stage now) ---------- */
+.st-beat { min-height: 57vh; }
+.st-beat:first-child { min-height: 70vh; }
+.st-beat--quiet { min-height: 52vh; }
+.st-block { padding: 9vh 0 3vh; }
+.st-block:first-child { padding-top: 12vh; }
+.st-midcta { margin: 6vh 0 0; }
+.st-final { min-height: 86vh; padding-top: 10vh; }
+.st-foot { padding: 9vh 0 28px; }
+.st-lead-xl { margin-top: 0; font-size: clamp(1.25rem, 1.65vw, 1.6rem); line-height: 1.45; color: var(--ink); max-width: 24em; }
+
+/* ---------- words under the lungs (right side), focus-in / blur-out crossfade ---------- */
+.stage-words { position: absolute; left: 50%; right: 0; bottom: 10.5vh; display: grid; place-items: center; padding: 0 3vw;
+}                                                           /* the right half's centre (~75%) sits under the lungs (~73.5%) */
+.stage-words p { grid-area: 1 / 1; margin: 0; white-space: nowrap; text-align: center;
+  font-family: var(--display); font-weight: 300; font-size: clamp(1.6rem, 2.3vw, 2.6rem); letter-spacing: -.02em; line-height: 1.1; color: var(--ink);
+  text-shadow: 0 2px 40px rgba(0,0,0,.9);
+  opacity: 0; filter: blur(14px); transform: translateY(14px) scale(.985);
+  transition: opacity .7s var(--ease), filter .7s var(--ease), transform .9s var(--ease); }
+.stage-words p.on { opacity: 1; filter: blur(0); transform: none; transition-duration: 1.4s, 1.4s, 1.6s; }
+.stage-words em { font-style: normal; color: var(--red-hi); }
+.stage-words p:last-child em { color: var(--ink-2); }
+@media (prefers-reduced-motion: reduce) { .stage-words p { transition: opacity .01s; filter: none; transform: none; } }
