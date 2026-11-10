@@ -35,6 +35,7 @@ node tools/shoot.mjs name 1440 900 --fire --at=2,5,12   # screenshots in shots/ 
 | `src/App.jsx`, `src/story.css` | the page: nav, story column, scroll triggers (fire on #problem, heal across #solution) |
 | `src/sections/ProductIntro.jsx` | the mocks reused by the page (menu bar + puff card, pace chart, privacy diagram) |
 | `src/config.js` | download links (TODO) |
+| `src/smooth.js` | Lenis smooth scroll on the GSAP ticker (ScrollTrigger synced, anchors glide; off for reduced motion) |
 
 Numbers (Intel Arc iGPU, Chrome, 1440x900): 60 fps during the run; one game destroys ~85-92 of 212 dots in ~10-12 s.
 Rendering stops while the scene is hidden under the product sections. Reduced motion: still end state, no effects.

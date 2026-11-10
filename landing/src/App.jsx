@@ -9,6 +9,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useStore, store, actions } from "./store.js";
 import { DOWNLOADS, STATUS_LINE } from "./config.js";
+import { scrollToId } from "./smooth.js";
 import { DeskMock, PaceChart, Flow, PACES, TONES } from "./sections/ProductIntro.jsx";
 import "./sections/sections.css";
 import "./story.css";
@@ -106,7 +107,7 @@ export default function App() {
         <div className={`stage-cap is-${chapter}`} data-phase={phase} aria-hidden="true">
           <div className="cap-marks"><b>{marks}</b><span>marks<br />left behind</span></div>
           <p className="cap-heal">The lungs relight as you read. In the app, the lung picture tracks your week: an illustration, not a measurement.</p>
-          <button className="replay" type="button" tabIndex={-1} onClick={() => { actions.replay(); document.getElementById("hero").scrollIntoView(); }}>
+          <button className="replay" type="button" tabIndex={-1} onClick={() => { actions.replay(); scrollToId("hero"); }}>
             <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8a5.5 5.5 0 1 0 1.7-4" /><path d="M2.5 2.5v3h3" /></svg>Again</button>
         </div>
       </div>
