@@ -16,3 +16,14 @@ export const CHEMS = [
 
 // "C10H14N2" -> ["C", <sub>10</sub>, "H", ...] (Sora has no subscript digits)
 export const formula = f => f.split(/(\d+)/).filter(Boolean).map((p, i) => (/^\d+$/.test(p) ? { sub: p, k: i } : { t: p, k: i }));
+
+// After the poison has filled the lungs, these five appear as markers on the dead tissue; hover / tap one to read it.
+// IUPAC: nicotine and acrolein are their preferred IUPAC names; formaldehyde's PIN is "formaldehyde", so we show the
+// systematic name (methanal); lead and nickel are elements, whose IUPAC names are just the element names.
+export const FINDINGS = [
+  { f: "C10H14N2", n: "Nicotine", iupac: "3-[(2S)-1-methylpyrrolidin-2-yl]pyridine", line: "Too toxic for crops. Not too toxic for your lungs." },
+  { f: "CH2O", n: "Formaldehyde", iupac: "methanal", line: "Used to preserve the dead. Inhaled by the living." },
+  { f: "C3H4O", n: "Acrolein", iupac: "prop-2-enal", line: "Once a weapon of war. Now a flavor of the month." },
+  { f: "Pb", n: "Lead", iupac: "lead · element 82", line: "We took it out of paint. We took it out of gas. Now it’s back, one puff at a time." },
+  { f: "Ni", n: "Nickel", iupac: "nickel · element 28", line: "Workers wear masks around it. Vapers breathe it in." },
+];

@@ -13,6 +13,8 @@ import Lungs from "./Lungs.jsx";
 import Airway from "./Airway.jsx";
 import Toxin from "./Toxin.jsx";
 import Clouds, { SKY_Y } from "./Clouds.jsx";
+import Streams from "./Streams.jsx";
+import Markers from "./Markers.jsx";
 import { LungSim } from "../sim/LungSim.js";
 import { store, actions } from "../store.js";
 
@@ -93,13 +95,15 @@ function Director() {
   function becomeReady() {
     if (!ready.current.sim || !ready.current.gpu || store.get().phase !== "loading") return;
     store.set({ phase: "idle", stageReady: true });
+    // the first seconds: the cloud closes in around the words
+    if (store.get().reducedMotion) I.open = 1; else gsap.to(I, { open: 1, duration: 3.4, ease: "expo.out" });
     // the reader got ahead of the loading: catch the story up
     const ch = store.get().chapter;
     if (ch === "hero" || ch === "problem") actions.fire(); else if (ch === "solution" || ch === "download") actions.skipToEnd();
   }
   const simRef = useRef(null), dock = useRef({ dock: 0 });
   // animated proxies (GSAP writes, useFrame reads)
-  const I = useRef({ pull: 0 }).current;                       // the inhale: 0 = clouds in the sky, 1 = all breathed in
+  const I = useRef({ pull: 0, open: 0 }).current;              // open: the cloud gathering round the words; pull: the inhale (1 = all breathed in)
   const C = useRef({ ...SHOTS.sky(size.width / size.height) }).current;
   const shot = useRef("sky"), tl = useRef(null), pointer = useRef({ x: 0, y: 0, sx: 0, sy: 0 });
 
@@ -199,6 +203,8 @@ function Director() {
       <Lungs simRef={simRef} />
       <Toxin simRef={simRef} />
       <Clouds I={I} />
+      <Streams I={I} />
+      <Markers simRef={simRef} />
     </group>
   );
 }

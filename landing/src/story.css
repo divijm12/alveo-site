@@ -96,6 +96,8 @@
   text-shadow: 0 0 22px rgba(166, 209, 58, .35); min-width: 2.2em; text-align: right; }
 .cap-marks > span { font-size: .66rem; line-height: 1.35; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-3); text-align: left; }
 .cap-heal { margin: 0; font-size: .8rem; line-height: 1.5; color: #8a8a93; }
+.stage-cap.is-intro[data-phase="done"] .cap-hint, .stage-cap.is-hero[data-phase="done"] .cap-hint, .stage-cap.is-problem[data-phase="done"] .cap-hint,
+.stage-cap.is-intro[data-phase="running"] .cap-marks, .stage-cap.is-intro[data-phase="done"] .cap-marks,
 .stage-cap.is-hero:not([data-phase="idle"]) .cap-marks,
 .stage-cap.is-problem:not([data-phase="idle"]) .cap-marks,
 .stage-cap.is-solution .cap-heal { opacity: 1; transform: none; }
@@ -103,7 +105,7 @@
   color: var(--ink-2); background: rgba(10,10,12,.5); border: 1px solid #2a2a2f; cursor: pointer; }
 .replay:hover { color: var(--ink); border-color: #45454c; }
 .replay svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-.stage-cap[data-phase="done"].is-hero .replay, .stage-cap[data-phase="done"].is-problem .replay { opacity: 1; transform: none; pointer-events: auto; }
+.stage-cap[data-phase="done"].is-intro .replay, .stage-cap[data-phase="done"].is-hero .replay, .stage-cap[data-phase="done"].is-problem .replay { opacity: 1; transform: none; pointer-events: auto; }
 
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 @media (prefers-reduced-motion: reduce) {
@@ -182,13 +184,13 @@
 .wisp i { display: block; width: 100%; height: 100%; background-image: var(--cloud); background-size: 200% 200%; background-repeat: no-repeat;
   opacity: 0; filter: brightness(.62) blur(1.5px); transition: opacity 3s var(--ease); animation: wisp 24s ease-in-out infinite alternate; }
 .intro.has-mist .wisp i { opacity: var(--o); }
-.wisp--1 { left: 6vw; top: 44vh; width: 38vw; height: 26vw; --o: .34; }
+.wisp--1 { left: -7vw; top: 30vh; width: 40vw; height: 27vw; --o: .42; }
 .wisp--1 i { background-position: 0 0; }
-.wisp--2 { right: 4vw; top: 46vh; width: 42vw; height: 28vw; --o: .3; }
+.wisp--2 { right: -8vw; top: 44vh; width: 42vw; height: 28vw; --o: .4; }
 .wisp--2 i { background-position: 100% 100%; animation-duration: 31s; animation-direction: alternate-reverse; }
-.wisp--3 { left: 30vw; top: 58vh; width: 46vw; height: 30vw; --o: .5; }
+.wisp--3 { left: 24vw; top: 60vh; width: 52vw; height: 32vw; --o: .55; }
 .wisp--3 i { background-position: 100% 0; animation-duration: 28s; }
-.wisp--4 { right: 18vw; top: 6vh; width: 34vw; height: 22vw; --o: .32; }
+.wisp--4 { left: 26vw; top: 2vh; width: 48vw; height: 28vw; --o: .4; }
 .wisp--4 i { background-position: 0 100%; animation-duration: 35s; }
 @keyframes wisp { from { transform: translate3d(-2.5vw, 0, 0); } to { transform: translate3d(2.5vw, -1.2vh, 0); } }
 
@@ -207,3 +209,44 @@
 .intro-cue i { position: relative; width: 1px; height: 42px; background: rgba(255,255,255,.12); overflow: hidden; }
 .intro-cue i::after { content: ""; position: absolute; left: 0; top: -40%; width: 1px; height: 40%; background: #c9cdd3; animation: cue 2.4s var(--ease) infinite; }
 .intro-cue:hover { color: var(--ink); }
+
+.cap-hint { margin: 0; font-size: .74rem; letter-spacing: .04em; color: #8b8b94; }
+
+/* ---------- findings: chemical markers on the poisoned lungs ---------- */
+.finds { position: absolute; inset: 0; pointer-events: none; }
+.find { position: absolute; left: 0; top: 0; width: 0; height: 0; z-index: 1; }
+.find.is-open { z-index: 3; }
+.find-pin { position: absolute; left: 0; top: 0; transform: translate(-11px, -11px) scale(.4); display: inline-flex; align-items: center; gap: 8px;
+  padding: 0; border: 0; background: none; color: #e7f5c4; font: inherit; cursor: pointer; opacity: 0; pointer-events: none;
+  transition: opacity .6s var(--ease), transform .9s var(--ease); transition-delay: calc(var(--i) * 130ms); }
+.find-pin i { position: relative; flex: none; width: 22px; height: 22px; border-radius: 50%; border: 1px solid rgba(195,239,78,.75);
+  background: radial-gradient(circle, rgba(195,239,78,.95) 0 3px, rgba(195,239,78,.12) 4px 100%); box-shadow: 0 0 16px rgba(166,209,58,.4); }
+.find-pin i::after { content: ""; position: absolute; inset: -1px; border-radius: 50%; border: 1px solid rgba(195,239,78,.6); animation: find-ping 2.6s var(--ease) infinite; animation-delay: calc(var(--i) * 300ms); }
+@keyframes find-ping { 0% { transform: scale(1); opacity: .8; } 70%, 100% { transform: scale(2.4); opacity: 0; } }
+.find-pin > span { font-family: var(--display); font-weight: 300; font-size: .95rem; letter-spacing: .01em; padding: 3px 9px 4px; border-radius: 999px;
+  background: rgba(8,10,4,.72); border: 1px solid rgba(195,239,78,.22); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); white-space: nowrap; }
+.find-pin sub, .find-top sub { font-size: .62em; vertical-align: -.25em; line-height: 0; }
+.find-pin:focus-visible { outline: none; }
+.find-pin:focus-visible i { outline: 2px solid var(--tox-hi); outline-offset: 3px; }
+.finds.is-on .find-pin { opacity: 1; transform: translate(-11px, -11px) scale(1); pointer-events: auto; }
+.find.is-open .find-pin > span { border-color: rgba(195,239,78,.6); }
+
+.find-card { position: absolute; width: 300px; padding: 16px 18px 17px; border-radius: 16px; pointer-events: none;
+  background: linear-gradient(160deg, rgba(166,209,58,.1), rgba(166,209,58,0) 55%), rgba(9,10,8,.9); border: 1px solid rgba(195,239,78,.26);
+  box-shadow: 0 20px 60px rgba(0,0,0,.6), 0 0 40px rgba(166,209,58,.08); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  opacity: 0; transform: translateY(6px) scale(.97); transition: opacity .35s var(--ease), transform .5s var(--ease); }
+.find.is-open .find-card { opacity: 1; transform: none; pointer-events: auto; }
+.find[data-v="u"] .find-card { bottom: 24px; }
+.find[data-v="d"] .find-card { top: 24px; }
+.find[data-h="r"] .find-card { left: -20px; }
+.find[data-h="l"] .find-card { right: -20px; }
+.find[data-h="c"] .find-card { left: -150px; }
+.find-card p { margin: 0; }
+.find-top { display: flex; align-items: baseline; gap: 10px; }
+.find-top b { font-family: var(--display); font-weight: 300; font-size: 1.7rem; letter-spacing: -.01em; color: var(--tox-hi); }
+.find-top > span { font-size: .74rem; letter-spacing: .18em; text-transform: uppercase; color: var(--ink); }
+.find-iupac { margin-top: 8px !important; font: 500 .72rem/1.45 ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace; color: #a3a3ac; overflow-wrap: anywhere; }
+.find-iupac em { font-style: normal; margin-right: 8px; padding: 1px 5px; border-radius: 3px; background: rgba(255,255,255,.07); color: #77777f; font-size: .62rem; letter-spacing: .12em; }
+.find-line { margin-top: 13px !important; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.08);
+  font-family: var(--display); font-weight: 300; font-size: 1.12rem; line-height: 1.32; letter-spacing: -.01em; color: #f1f1f3; }
+@media (prefers-reduced-motion: reduce) { .find-pin, .find-card { transition: opacity .01s; } .find-pin i::after { animation: none; } }

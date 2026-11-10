@@ -22,6 +22,7 @@ import GradualBlur from "./bits/GradualBlur.jsx";
 import ShinyText from "./bits/ShinyText.jsx";
 import TargetCursor from "./bits/TargetCursor.jsx";
 import Intro from "./Intro.jsx";
+import Findings from "./Findings.jsx";
 import "./sections/sections.css";
 import "./story.css";
 
@@ -71,7 +72,7 @@ export default function App() {
   const phase = useStore(s => s.phase), stageReady = useStore(s => s.stageReady);
   const chapter = useStore(s => s.chapter);
   // which line shows under the lungs: the punchline once the game is over, then what Alveo does as they relight
-  const words = useStore(s => s.phase === "done" && (s.chapter === "hero" || s.chapter === "problem" || (s.chapter === "solution" && s.heal < 0.1)) ? "mark"
+  const words = useStore(s => s.phase === "done" && (s.chapter === "intro" || s.chapter === "hero" || s.chapter === "problem" || (s.chapter === "solution" && s.heal < 0.1)) ? "mark"
     : s.chapter === "solution" && s.heal >= 0.1 && s.heal < 0.6 ? "count" : "");
   const [pace, setPace] = useState("steady");
   const sel = PACES.find(p => p.id === pace);
@@ -152,6 +153,7 @@ export default function App() {
       {/* stage overlay: the opening words + chemicals; the punchline under the lungs; caption + replay top right */}
       <div className="stage-ui">
         <Intro />
+        <Findings />
         <div className="stage-words" aria-hidden="true">
           <p className={words === "mark" ? "on" : ""}>Every puff <em>leaves a mark.</em></p>
           <p className={words === "count" ? "on" : ""}>Alveo counts every puff <em>for you.</em></p>
@@ -161,6 +163,7 @@ export default function App() {
             <Marks />
             <span>marks<br />left behind</span>
           </div>
+          <p className="cap-hint">Hover the markers: what you just breathed in.</p>
           <p className="cap-heal">The poison washes out as you read. In the app, the lung picture tracks your week: an illustration, not a measurement.</p>
           <button className="replay cursor-target" type="button" tabIndex={-1} onClick={() => scrollToId("intro")}>
             <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8a5.5 5.5 0 1 0 1.7-4" /><path d="M2.5 2.5v3h3" /></svg>Replay</button>

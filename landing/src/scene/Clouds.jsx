@@ -1,10 +1,10 @@
-// The opening sky: a field of dark grey cloud puffs (camera-facing quads on the procedural atlas, sorted back to
-// front each frame), drifting slowly on a crosswind. The chemical labels (DOM, see App) float among them: this
+// The opening sky: dark grey cloud puffs (camera-facing quads on the procedural atlas, sorted back to front each
+// frame). A dark bank far behind, and a dense, brighter ring of billows that closes in around the headline in the
+// first seconds (`I.open` 0 -> 1) and then keeps swaying, so the words sit in a hollow inside the cloud. The chemical labels (DOM, see App) float among them: this
 // component projects their 3D anchors to the screen every frame.
-// `I.pull` (0..1, the director animates it) is the inhale: every puff and label is drawn into a vortex that
-// spirals down into the windpipe's mouth, shrinking, darkening and turning the poison's colour as it goes. Each
-// starts with its own small delay (far ones later), so the sky empties from the middle out. Pull back to 0 and the
-// cloud spirals out again (replay).
+// `I.pull` (0..1, the director animates it) is the inhale: the puffs lean into the vortex, thin out and dissolve
+// while the gas itself is drawn into the windpipe as thin streams (Streams.jsx). The labels ride the vortex all
+// the way into the mouth. Pull back to 0 and the cloud gathers again (replay).
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
@@ -35,7 +35,7 @@ uniform sampler2D uMap; varying vec2 vUv; varying float vA; varying float vG; va
 void main() {
   vec4 t = texture2D(uMap, vUv);
   float a = t.a * vA; if (a < 0.004) discard;
-  vec3 smoke = vec3(0.19, 0.192, 0.205) * t.r * vK;           // linear: reads as the reference's dark greys
+  vec3 smoke = vec3(0.2, 0.202, 0.215) * t.r * vK;           // linear: reads as the reference's dark greys
   vec3 sick = vec3(0.09, 0.12, 0.02) * (0.5 + t.r);
   gl_FragColor = vec4(mix(smoke, sick, vG), a);
 }`;
@@ -45,19 +45,21 @@ export default function Clouds({ I }) {
   const mesh = useRef(), tags = useRef([]);
   const P = useMemo(() => {
     const r = rng(7), puffs = [];
-    const add = (n, x0, x1, y0, y1, z0, z1, s0, s1, a0, a1, k) => {
-      for (let i = 0; i < n; i++) puffs.push({
-        x: x0 + r() * (x1 - x0), y: y0 + r() * (y1 - y0), z: z0 + r() * (z1 - z0), s: s0 + r() * (s1 - s0),
+    const add = (n, x0, x1, y0, y1, z0, z1, s0, s1, a0, a1, k, ring) => {
+      for (let i = 0; i < n; i++) {
+        let x = x0 + r() * (x1 - x0), y = y0 + r() * (y1 - y0);
+        if (ring) { const f = (i + r() * 0.8) / n * Math.PI * 2, rx = ring[0] + r() * ring[2], ry = ring[1] + r() * ring[2] * 0.6; x = Math.cos(f) * rx; y = SKY_Y - 0.15 + Math.sin(f) * ry; }
+        puffs.push({ ring: !!ring, x, y, z: z0 + r() * (z1 - z0), s: s0 + r() * (s1 - s0),
         a: a0 + r() * (a1 - a0), k: k * (0.85 + r() * 0.3), rot: (r() - 0.5) * 0.7, spin: (r() - 0.5) * 0.03,
         v: [(r() < 0.5 ? 0 : 0.5), (r() < 0.5 ? 0 : 0.5)], wind: 0.08 + r() * 0.1, bob: r() * 6.28, d: 0,
-      });
+      }); }
     };
     const m = low ? 0.6 : 1;
     // (the opening frame spans about x ±8, y 5.5..15.5 at z = 0; more at the back)
-    add(Math.round(26 * m), -15, 15, 9.0, 16.5, -10, -5, 9, 14, 0.45, 0.75, 0.42);   // far bank, high and dark
-    add(Math.round(40 * m), -11, 11, 5.2, 9.6, -4, 0, 6, 9.5, 0.7, 1.0, 1.0);       // the billowing bank under the words
-    add(Math.round(14 * m), -11, 11, 11.8, 15.2, -3, -0.5, 5, 8, 0.35, 0.6, 0.7);    // above the words
-    add(Math.round(10 * m), -10, 10, 4.5, 15.5, 1.5, 5, 2.6, 4.2, 0.12, 0.24, 1.1);  // thin wisps in front
+    add(Math.round(22 * m), -15, 15, 7.0, 17, -11, -6, 9, 14, 0.4, 0.7, 0.4);                        // far bank, dark
+    add(Math.round(40 * m), 0, 0, 0, 0, -2.5, 1.5, 5.5, 8.5, 0.8, 1.0, 1.15, [8.4, 4.6, 1.8]);       // the ring of billows
+    add(Math.round(18 * m), 0, 0, 0, 0, -0.5, 2.2, 3.4, 5.2, 0.45, 0.7, 1.2, [6.3, 3.0, 0.9]);       // inner edge, hugging the words
+    add(Math.round(8 * m), -10, 10, 4.5, 15.5, 2.5, 5, 2.6, 4.2, 0.1, 0.2, 1.1);                     // thin wisps in front
     for (const p of puffs) p.d = Math.min(1, Math.hypot(p.x, p.y - SKY_Y, p.z) / 16) * DELAY * 0.8 + r() * DELAY * 0.2;
     const n = puffs.length;
     const geo = new THREE.InstancedBufferGeometry(); geo.copy(new THREE.PlaneGeometry(1, 1)); geo.instanceCount = n;
@@ -95,18 +97,21 @@ export default function Clouds({ I }) {
 
   useFrame((state) => {
     const t = state.clock.elapsedTime, still = store.get().reducedMotion;
-    const pull = I.pull, cam = state.camera;
+    const pull = I.pull, open = I.open ?? 1, cam = state.camera;
     const { puffs, A, n } = P;
     let any = false;
     for (let i = 0; i < n; i++) {
       const p = puffs[i];
       let x = p.x, y = p.y;
-      if (!still) { x = ((p.x + t * p.wind + 18) % 36 + 36) % 36 - 18; y += Math.sin(t * 0.21 + p.bob) * 0.12; }
-      const q = Math.min(1, Math.max(0, (pull * (1 + DELAY) - p.d)));
-      const e = swirl(P.pos[i], x, y, p.z, q, 2.4 + (i % 5) * 0.25);
-      P.size[i] = p.s * (1 - 0.9 * e);
-      P.alpha[i] = p.a * (1 - sstep(0.72, 0.97, e));
-      P.green[i] = sstep(0.35, 0.95, e) * 0.85;
+      if (p.ring) {                                             // closes in from outside, then sways in place
+        const k = 1 + 0.9 * (1 - open);
+        x = p.x * k + (still ? 0 : Math.sin(t * 0.17 + p.bob) * 0.35); y = SKY_Y + (p.y - SKY_Y) * k + (still ? 0 : Math.sin(t * 0.23 + p.bob * 1.3) * 0.15);
+      } else if (!still) { x = ((p.x + t * p.wind + 18) % 36 + 36) % 36 - 18; y += Math.sin(t * 0.21 + p.bob) * 0.12; }
+      const q = Math.min(1, Math.max(0, (pull * (1 + DELAY) - p.d) * 1.05));
+      const e = swirl(P.pos[i], x, y, p.z, q * 0.7, 1.6 + (i % 5) * 0.2);    // leans into the vortex, thinning into the strands
+      P.size[i] = p.s * (1 - 0.55 * q);
+      P.alpha[i] = p.a * (1 - sstep(0.3, 0.95, q)) * Math.min(1, open * 1.4);
+      P.green[i] = sstep(0.3, 0.9, q) * 0.4 + 0 * e;
       if (P.alpha[i] > 0.004) any = true;
       v.copy(P.pos[i]).applyMatrix4(cam.matrixWorldInverse); P.depth[i] = v.z;
     }

@@ -5,6 +5,7 @@ const state = {
   chapter: "intro",   // intro | hero | problem | solution | download (what the story column shows)
   destroyed: 0,       // dots destroyed so far
   total: 212,
+  findings: false,   // the five chemical markers are placed on the poisoned lungs
   heal: 0,            // 0..1, driven by scroll in the product sections: damaged dots relight
   scroll: 0,          // 0..1 over the hero's own scroll-out
   stageReady: false,  // 3D compiled and drawing: the canvas fades in
