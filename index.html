@@ -52,6 +52,8 @@
   .soon { color: var(--red); font-weight: 600; letter-spacing: .14em; text-transform: uppercase; font-size: .78rem;
     border: 1px solid rgba(255, 45, 45, .45); border-radius: 999px; padding: 7px 15px; margin-top: 6px; animation-delay: 1.65s; }
   footer { text-align: center; color: var(--ink-3); font-size: .8rem; animation-delay: 2s; }
+  footer a.cookies { color: var(--ink-3); text-decoration: underline; text-underline-offset: 3px; }
+  footer a.cookies:hover { color: var(--ink-2); }
   body { user-select: none; -webkit-user-select: none; }
   input { user-select: text; -webkit-user-select: text; }
   .breath circle { opacity: 0; transform-box: fill-box; transform-origin: center; }
@@ -98,6 +100,7 @@
     #smoke { display: none; }
   }
 </style>
+<script src="analytics.js" defer></script>
 </head>
 <body>
 <canvas id="smoke" aria-hidden="true"></canvas>
@@ -121,7 +124,7 @@
   <p class="beta">On a Mac in the US? <a href="https://beta.getalveo.app">Join the private beta <span class="arrow" aria-hidden="true">→</span></a></p>
   <div class="hint" id="hint">Press and hold anywhere to take a breath</div>
 </main>
-<footer>© 2026 Alveo</footer>
+<footer>© 2026 Alveo<span class="sep" aria-hidden="true"> · </span><a href="#" class="cookies" onclick="window.alveoCookies&&alveoCookies();return false">Cookies</a></footer>
 </div>
 <script>
 (() => {
@@ -143,7 +146,7 @@
   if (form) form.addEventListener("submit", async e => {
     e.preventDefault();
     if (!email.checkValidity()) { say("Please enter a valid email address.", "err"); email.focus(); return; }
-    const done = () => { form.remove(); say("You're on the list. We'll email you when Alveo launches.", "ok"); };
+    const done = () => { form.remove(); say("You're on the list. We'll email you when Alveo launches.", "ok"); window.alveoTrack && alveoTrack("waitlist_signup"); };
     if (form.company.value || Date.now() - loadedAt < 1200) return done();     // bot traps: hidden field, instant submit
     btn.disabled = true; btn.textContent = "Adding…";
     try {
