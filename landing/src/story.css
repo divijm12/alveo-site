@@ -144,6 +144,9 @@
 .st-intro { min-height: 100vh; }
 .intro { position: absolute; inset: 0; overflow: hidden; transition: opacity 1s var(--ease), visibility 0s linear 0s; }
 .intro.is-away { opacity: 0; visibility: hidden; transition: opacity .9s var(--ease), visibility 0s linear .9s; }
+/* scrolled on while the breath plays: only the chemicals stay (they ride the smoke in); the words get out of the text's way */
+.intro .intro-head, .intro .intro-foot, .intro .wisp { transition: opacity .35s var(--ease); }
+.intro.is-ahead .intro-head, .intro.is-ahead .intro-foot, .intro.is-ahead .wisp { opacity: 0; }
 .intro-head { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-54%); text-align: center;
   font-family: var(--display); font-weight: 300; font-size: clamp(3.4rem, 7.6vw, 8.6rem); line-height: .98; letter-spacing: -.05em; color: #ececef; }
 .intro-head p { margin: 0; white-space: nowrap; }

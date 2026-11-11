@@ -8,7 +8,7 @@ import { FINDINGS, formula } from "./chems.js";
 const Formula = ({ f }) => formula(f).map(p => (p.sub ? <sub key={p.k}>{p.sub}</sub> : <span key={p.k}>{p.t}</span>));
 
 export default function Findings() {
-  const show = useStore(s => s.findings && s.chapter !== "solution" && s.chapter !== "download" && s.heal < 0.05);
+  const show = useStore(s => s.findings && s.heal < 0.05);   // until the lungs start to heal (wherever the reader is)
   const [hover, setHover] = useState(-1), [pinned, setPinned] = useState(-1);
   const open = hover >= 0 ? hover : pinned;
   useEffect(() => { if (!show) { setHover(-1); setPinned(-1); } }, [show]);

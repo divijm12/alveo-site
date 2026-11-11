@@ -13,7 +13,8 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useStore, store, actions, live } from "./store.js";
 import { DOWNLOADS } from "./config.js";
-import { startStory, replayFromTop } from "./story.js";
+import { startStory, healAllowed } from "./story.js";
+import { scrollToId } from "./smooth.js";
 import { DeskMock } from "./sections/ProductIntro.jsx";
 import ScrollReveal from "./bits/ScrollReveal.jsx";
 import Magnet from "./bits/Magnet.jsx";
@@ -74,7 +75,8 @@ export default function App() {
   const phase = useStore(s => s.phase), stageReady = useStore(s => s.stageReady);
   const chapter = useStore(s => s.chapter);
   // which line shows under the lungs: the punchline once the game is over, then what Alveo does as they relight
-  const words = useStore(s => s.phase === "done" && (s.chapter === "intro" || s.chapter === "problem" || (s.chapter === "solution" && s.heal < 0.1)) ? "mark"
+  // (by the story's state, not the chapter: a reader who scrolled ahead still gets the punchline)
+  const words = useStore(s => s.phase === "done" && s.heal < 0.1 ? "mark"
     : s.chapter === "solution" && s.heal >= 0.1 && s.heal < 0.6 ? "count" : "");
   const root = useRef(), deskRef = useRef();
 
@@ -113,7 +115,8 @@ export default function App() {
     document.fonts?.ready.then(() => ScrollTrigger.refresh());
     // the lungs heal with the scroll, but at a limited speed: a fast flick through the solution still shows it
     const healTick = (time, dms) => {
-      const h = store.get().heal, tgt = live.heal; if (h === tgt) return;
+      // the lungs heal only once the poison is done and the punchline has had its moment (story.js)
+      const h = store.get().heal, tgt = healAllowed() ? live.heal : 0; if (h === tgt) return;
       const k = Math.min(dms, 50) / 1000 * 0.42;                // full heal takes at least ~2.4 s
       const nh = store.get().reducedMotion ? tgt : h < tgt ? Math.min(tgt, h + k) : Math.max(tgt, h - k * 1.5);
       store.set({ heal: nh });
@@ -176,7 +179,7 @@ export default function App() {
           </div>
           <p className="cap-hint">Hover the markers: what the vape left in these lungs.</p>
           <p className="cap-heal">The poison washes out as you read. In the app, the lung picture tracks your week: an illustration, not a measurement.</p>
-          <button className="replay cursor-target" type="button" tabIndex={-1} onClick={replayFromTop}>
+          <button className="replay cursor-target" type="button" tabIndex={-1} onClick={() => scrollToId("intro")}>
             <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8a5.5 5.5 0 1 0 1.7-4" /><path d="M2.5 2.5v3h3" /></svg>Replay</button>
         </div>
       </div>

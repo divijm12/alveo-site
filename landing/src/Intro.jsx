@@ -9,7 +9,7 @@ import gsap from "gsap";
 import { store, useStore } from "./store.js";
 import { CHEMS, formula } from "./chems.js";
 import { cloudURL } from "./cloudTex.js";
-import { step } from "./story.js";
+import { scrollToId } from "./smooth.js";
 
 const chars = (text, cls = "") => [...text].map((c, i) => <span key={i} className={"ch " + cls}>{c === " " ? " " : c}</span>);
 
@@ -18,6 +18,7 @@ export default function Intro() {
   const chapter = useStore(s => s.chapter);
   const gone = useStore(s => s.phase === "inhaling" || s.phase === "running" || s.phase === "done");
   const arrived = useStore(s => s.chapter !== "landing");      // scrolled off the landing
+  const inhaling = useStore(s => s.phase === "inhaling");      // stays up during the breath even if you scroll on (the labels ride the vortex)
 
   // mist texture: made by a worker, then the wisps fade in
   useEffect(() => {
@@ -68,7 +69,7 @@ export default function Intro() {
   }, [gone]);
 
   return (
-    <div className={"intro" + (chapter === "intro" ? "" : " is-away")} ref={root} aria-hidden="true">
+    <div className={"intro" + (chapter === "intro" ? "" : inhaling ? " is-ahead" : " is-away")} ref={root} aria-hidden="true">
       <div className="wisp wisp--4"><i /></div>
       <div className="wisp wisp--3"><i /></div>
       <div className="intro-head">
@@ -87,7 +88,7 @@ export default function Intro() {
       </div>
       <div className="intro-foot">
         <p className="intro-note">Floating in it: chemicals measured in vape (e-cigarette) aerosol in published studies. Amounts vary by device and liquid.</p>
-        <a className="breathe-cue intro-cue cursor-target" tabIndex={-1} href="#problem" onClick={e => { e.preventDefault(); step(1); }}><span>Scroll to inhale</span><i /></a>
+        <a className="breathe-cue intro-cue cursor-target" tabIndex={-1} href="#problem" onClick={e => { e.preventDefault(); scrollToId("problem"); }}><span>Scroll to inhale</span><i /></a>
       </div>
     </div>
   );
