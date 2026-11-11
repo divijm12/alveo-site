@@ -9,7 +9,7 @@ export default function Landing() {
     <div className={"landing" + (here ? "" : " is-away")} aria-hidden="true">
       <div className="landing-in">
         <p className="landing-mark">ALVEO<span>.</span></p>
-        <p className="landing-sub">See what one vape puff does.</p>
+        <p className="landing-sub">Every puff leaves a mark.</p>
       </div>
       <a className="breathe-cue landing-cue cursor-target" tabIndex={-1} href="#intro" onClick={e => { e.preventDefault(); scrollToId("intro"); }}>
         <span>Scroll to breathe in</span><i />

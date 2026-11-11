@@ -10,10 +10,12 @@ import { useMemo, useRef, useLayoutEffect } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import lung from "../data/lung.json";
-import { toWorld, S } from "../sim/LungSim.js";
+import { toWorld, S, TRACHEA } from "../sim/LungSim.js";
 import { store } from "../store.js";
 
 const PLATE_Z = -0.3;
+const PIPE_TOP = TRACHEA.top + 0.02 - 0.2;                       // where the vapor front starts (same as Airway / Toxin)
+const AIR_TOP = 9, AIR_END = toWorld(0, 490)[1];                   // airway fill level: nothing yet / down to the bronchi ends
 const FACE_Z = PLATE_Z + 0.06;                                   // the membrane sits on the plate's front face
 const BOX = { x: -3.1, y: -3.1, w: 6.2, h: 7.6 };                // world area covered by the toxin field
 const FW = 128, FH = Math.round(FW * BOX.h / BOX.w);
@@ -185,10 +187,17 @@ export default function Lungs({ simRef }) {
     memMat.current.uniforms.uTime.value = time;
     const lost = sim.destroyed / n * (1 - heal);
     memMat.current.uniforms.uHealthy.value = 1 - lost;
-    // the airway carries the vapor: dull red at rest, sick green while the puff runs through it
+    // the airway carries the vapor: dull red at rest, sick green while the puff runs through it, filling from the top
+    // down with the vapor front (windpipe, then the bronchi), never all at once
     const busy = sim.released >= 0 && !sim.finished ? sim.vapor.emit : 0;
     const u = inlayMat.current.uniforms;
     u.uBusy.value += (busy - u.uBusy.value) * Math.min(1, dt * 5);
+    if (sim.released < 0) u.uFill.value = AIR_TOP;
+    else {
+      const f = sim.vapor.front, fy = PIPE_TOP - f * (PIPE_TOP - TRACHEA.carina);
+      const tgt = f < 1 ? fy : AIR_END;                          // after the carina: on down the bronchi
+      u.uFill.value = Math.max(tgt, u.uFill.value - dt * 1.4);
+    }
     u.uTime.value = time; u.uLevel.value = 1 - lost * 0.7;
     railMat.current.emissiveIntensity = 0.12 + 0.3 * (1 - lost);
   });
@@ -207,12 +216,13 @@ export default function Lungs({ simRef }) {
       </mesh>
       <mesh geometry={inlayGeo} position={[0, 0, FACE_Z + 0.01]}>
         <shaderMaterial ref={inlayMat}
-          uniforms={{ uTime: { value: 0 }, uBusy: { value: 0 }, uLevel: { value: 1 } }}
+          uniforms={{ uTime: { value: 0 }, uBusy: { value: 0 }, uLevel: { value: 1 }, uFill: { value: AIR_TOP } }}
           vertexShader={`varying vec3 vP; void main(){ vP = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }`}
-          fragmentShader={`varying vec3 vP; uniform float uTime, uBusy, uLevel;
+          fragmentShader={`varying vec3 vP; uniform float uTime, uBusy, uLevel, uFill;
             void main(){ float flow = 0.5 + 0.5 * sin(vP.y * 11.0 + uTime * 6.0);
               vec3 rest = vec3(0.26, 0.012, 0.02) * uLevel, sick = vec3(0.5, 0.85, 0.08) * (0.7 + 1.1 * flow);
-              gl_FragColor = vec4(mix(rest * (0.75 + 0.15 * flow), sick, uBusy), 1.0);
+              float filled = smoothstep(uFill - 0.05, uFill + 0.05, vP.y), edge = exp(-pow((vP.y - uFill) / 0.1, 2.0)) * step(uFill, 8.0);
+              gl_FragColor = vec4(mix(rest * (0.75 + 0.15 * flow), sick * (0.8 + 0.6 * edge), uBusy * filled), 1.0);
               #include <colorspace_fragment>
             }`} />
       </mesh>

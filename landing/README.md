@@ -3,7 +3,7 @@
 One scroll story beside a live 3D stage (fixed, framed on the right; the story is a column on the left). The
 Download button is in the nav the whole time.
 
-0. **Landing** (`src/Landing.jsx`, RJ 2026-11-10): the big ALVEO. wordmark, "See what one vape puff does." and a large
+0. **Landing** (`src/Landing.jsx`, RJ 2026-11-10): the big ALVEO. wordmark, "Every puff leaves a mark." and a large
    breathing "Scroll to breathe in" pill. Scrolling it away fades the wordmark up into a vape cloud that rolls in
    with the scroll (`live.open` in store.js, eased in the scene).
    **Candy screen**: "One vape puff, up close" over "Tastes like candy. Breathes like lead." (candy in the brand red),

@@ -13,13 +13,13 @@ export const BRONCHI = [toWorld(452, 478), toWorld(572, 478)];  // where the two
 
 const DEFAULTS = {
   step: 1 / 60,
-  travel: 0.8,        // s for the vapor to fall from the port to the bronchi
+  travel: 2.0,        // s for the vapor to fill the windpipe, top to bottom, and reach the bronchi (RJ: slow, progressive)
   exhale: 2.4,        // s the vape keeps pushing vapor
   dose: 1.5,          // toxin per s fed into the tissue at each bronchus
   spread: 1.45,       // how fast poison moves patch to patch at first ...
   weaken: 2.0,        // ... decaying with this time constant (s)
   quiet: 1.2,         // s without a new dead patch (after the exhale) ends the run
-  timeout: 11,        // s after release: the run ends regardless
+  timeout: 12.2,      // s after release: the run ends regardless
 };
 
 function rng(seed) {                // mulberry32
@@ -78,7 +78,8 @@ export class LungSim {
     if (this.released < 0 || this.finished) return;
     const tau = this.time - this.released;
     this.vapor.emit = tau < o.exhale ? 1 : Math.max(0, 1 - (tau - o.exhale) / 0.8);
-    this.vapor.front = Math.min(1, tau / o.travel);
+    const x = Math.min(1, tau / o.travel);
+    this.vapor.front = x * x * (3 - 2 * x) * 0.35 + x * 0.65;   // eases in and out a little, never stalls
     const inside = tau - o.travel;                               // time since the vapor reached the bronchi
     if (inside < 0) return;
     const feed = inside < o.exhale ? o.dose : 0;

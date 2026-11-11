@@ -4,7 +4,8 @@
 //   seep  - from the bronchus it crawls patch to patch toward the spreading edge, slowing as it goes;
 //   fume  - afterwards, thin fumes keep rising off the dead tissue until the lungs heal.
 // Soft olive haze plus a few acid-green motes, additive (the bloom does the glow). One green light follows the
-// vapor down the airway and then hangs over the poisoned area, so the metal and the vape catch the colour.
+// vapor front down the airway and then hangs over the poisoned area, so the metal catches the colour. The vapor
+// never runs ahead of the front (sim.vapor.front), so the windpipe fills from the top down.
 import { useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
@@ -80,7 +81,7 @@ export default function Toxin({ simRef }) {
       }
     }
     // move
-    const carY = TRACHEA.carina, hw = TRACHEA.halfWidth * 0.85;
+    const carY = TRACHEA.carina, hw = TRACHEA.halfWidth * 0.85, frontY = PORT_Y - 0.2 - sim.vapor.front * (PORT_Y - 0.2 - carY);
     for (let i = 0; i < N; i++) {
       if (P.life[i] >= P.max[i]) { P.a[i] = 0; continue; }
       P.life[i] += dt;
@@ -88,9 +89,10 @@ export default function Toxin({ simRef }) {
       const sd = P.seed[i], wob = Math.sin(t * 2.3 + sd) * 0.6 + Math.sin(t * 3.7 + sd * 1.7) * 0.4;
       let vx = P.vx[i], vy = P.vy[i];
       const m = P.mode[i];
-      if (m === 0) {                                             // pour
+      if (m === 0) {                                             // pour: never ahead of the vapor front, so the pipe fills top down
         vx += wob * dt * 1.2; vx -= x * dt * 9;
         if (Math.abs(x) > hw) x = Math.sign(x) * hw;
+        if (sim.vapor.front < 1 && y + vy * dt < frontY) { y = frontY + Math.random() * 0.04; vy = -0.15 - Math.random() * 0.3; }
         if (y < carY + 0.05) { P.mode[i] = 1; P.side[i] = Math.random() < sim.side[0] / (sim.side[0] + sim.side[1]) ? 0 : 1; }
       } else if (m === 1 || m === 2) {
         let tx, ty, sp;

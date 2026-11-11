@@ -1,5 +1,5 @@
 // The page: one scroll story beside a live 3D stage (fixed, framed on the right).
-//   Landing: the ALVEO. wordmark, "See what one vape puff does.", a big "Scroll to breathe in".
+//   Landing: the ALVEO. wordmark, "Every puff leaves a mark.", a big "Scroll to breathe in".
 //   Intro: scrolling off the landing rolls a vape cloud in: "Tastes like candy. Breathes like lead.", full of what
 //          vapes really put out; the next scroll breathes it all in, down the windpipe, and the poison starts.
 //          Labels on the 3D say what it is ("Vape aerosol" on the windpipe, "Your lungs").
@@ -135,9 +135,9 @@ export default function App() {
     return () => (window.cancelIdleCallback ? cancelIdleCallback(id) : clearTimeout(id));
   }, []);
   useEffect(() => { if (!stageReady) return; const t = setTimeout(() => setCursorOn(true), 400); return () => clearTimeout(t); }, [stageReady]);
-  // problem beats: words come into focus as you scroll, each passing through the poison's green on the way
-  const reveal = { containerClassName: "pi-title st-h2 st-sr", baseOpacity: 0.08, enableBlur: true, blurStrength: 9, baseRotation: 0,
-    highlightColor: "#a6d13a", smoothing: 0.5, stagger: 0.06, wordAnimationEnd: "center 48%" };
+  // problem beats: words brighten one by one as you scroll (plain fade: no blur, no green; RJ 2026-11-11)
+  const reveal = { containerClassName: "pi-title st-h2 st-sr", baseOpacity: 0.08, enableBlur: false, baseRotation: 0,
+    smoothing: 0.5, stagger: 0.06, wordAnimationEnd: "center 48%" };
 
   return (
     <div className="pi st" ref={root}>
@@ -186,7 +186,7 @@ export default function App() {
 
       <main className="st-col">
         {/* ---------------- landing + intro (both drawn on the stage; these are their scroll room) ---------------- */}
-        <section className="st-intro" id="landing"><h1 className="sr">Alveo. See what one vape puff does.</h1></section>
+        <section className="st-intro" id="landing"><h1 className="sr">Alveo. Every puff leaves a mark.</h1></section>
         <section className="st-intro" id="intro"><h2 className="sr">One vape puff, up close: tastes like candy, breathes like lead.</h2></section>
 
         {/* ---------------- 01 the problem (the opening breath is its hook; the poison spreads alongside) ---------------- */}

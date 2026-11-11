@@ -201,7 +201,7 @@ function Director() {
   return (
     <group ref={content} visible={false}>
       <Rig frame={frame} />
-      <Airway dockRef={dock} />
+      <Airway dockRef={dock} simRef={simRef} />
       <Lungs simRef={simRef} />
       <Toxin simRef={simRef} />
       <Smoke I={I} />
