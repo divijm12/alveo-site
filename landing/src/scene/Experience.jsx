@@ -160,7 +160,7 @@ function Director() {
       const target = p < BREATH ? p / BREATH * RELEASE : RELEASE + (p - BREATH) / (1 - BREATH) * sim.rec.end;
       if (store.get().reducedMotion) story.t = live.story > 0 ? TOTAL : 0;
       else if (story.first) story.t = target;                  // page opened part-way down: no replay from the top
-      else { story.t += (target - story.t) * Math.min(1, dt * 4.5); if (Math.abs(target - story.t) < 0.004) story.t = target; }
+      else { story.t += (target - story.t) * Math.min(1, dt * 3); if (Math.abs(target - story.t) < 0.004) story.t = target; }
       story.first = false;
       applyStory(story.t, size.width / size.height);
     }
