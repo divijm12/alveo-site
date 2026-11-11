@@ -217,7 +217,7 @@ export default function App() {
                   alt="Alveo on a Mac, right after a puff: 'Did you just vape?' 11 of 54 puffs today, 43 left, with Yes, Not a vape and Start urge timer buttons." />
               </GlareHover>
             </div>
-            <p className="st-private st-rv"><i aria-hidden="true" />Counted on your device. Nothing ever leaves it without your OK.</p>
+            <p className="st-private st-rv"><i aria-hidden="true" />Counted on your device. Nothing ever leaves your device.</p>
           </div>
         </section>
 
