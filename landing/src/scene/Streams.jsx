@@ -1,6 +1,6 @@
-// The breath itself: thin filaments of gas drawn out of the cloud and sucked into the windpipe's mouth, the way smoke
-// is pulled into a straw: each strand starts wide and faint in the cloud, then tightens into a converging spiral and
-// thins to a hairline as it speeds into the mouth.
+// The breath itself: thin filaments of gas drawn out of the cloud and sucked into the windpipe's mouth, like air
+// through pursed lips: each strand starts as a broad soft wisp in the cloud, closes into a narrow funnel above the
+// mouth and thins to a faint hairline as it speeds in. Same grey as the smoke (the poison's green starts inside).
 // Each filament is a fixed 3D curve (the same vortex the labels ride: radius and height shrink, angle winds up). A
 // moving window along it ("head" and a tail behind) is what you see, so the gas visibly travels inward. Everything
 // runs on the GPU from one uniform (`uPull`); the ribbons are expanded in screen space, so they stay a few pixels
@@ -25,24 +25,27 @@ void main() {
   vec2 sa = a.xy / a.w * uView * 0.5, sb = b.xy / b.w * uView * 0.5;
   vec2 dir = sb - sa; dir = length(dir) > 1e-4 ? normalize(dir) : vec2(0.0, 1.0);
   vec2 nrm = vec2(-dir.y, dir.x);
-  float w = aW * mix(3.2, 0.45, pow(aS, 0.7));                // px: a soft band in the cloud, a hairline at the mouth
+  float w = aW * mix(15.0, 0.7, pow(aS, 0.85));               // px: a broad soft wisp in the cloud, a hairline at the mouth
   a.xy += nrm * aSide * w / (uView * 0.5) * a.w;
   gl_Position = a;
   // the visible window travels from the cloud (s = 0) into the mouth (s = 1) and on, so the tail follows it in
   float head = clamp((uPull * 1.6 - aDelay) * 1.8, 0.0, 1.0 + aLen), tail = head - aLen;
-  vA = smoothstep(tail, tail + aLen * 0.55, aS) * (1.0 - smoothstep(head - 0.05, head, aS)) * (1.0 - smoothstep(0.93, 1.0, aS));
+  vA = smoothstep(tail, tail + aLen * 0.55, aS) * (1.0 - smoothstep(head - 0.05, head, aS)) * (1.0 - smoothstep(0.9, 1.0, aS));
   vS = aS; vSide = aSide; vSeed = aSeed;
 }`;
 const frag = /* glsl */ `
 uniform float uTime;
 varying float vS; varying float vSide; varying float vA; varying float vSeed;
 void main() {
-  float prof = pow(max(0.0, 1.0 - abs(vSide)), 1.6);          // soft across the strand (max: no NaN at the very edge)
-  float flow = 0.72 + 0.28 * sin(vS * 26.0 - uTime * 9.0 + vSeed * 6.283);
-  float a = vA * prof * flow * mix(0.18, 1.0, smoothstep(0.15, 0.8, vS));   // thin and faint in the cloud, denser as it gathers
+  float prof = pow(max(0.0, 1.0 - abs(vSide)), 2.2);          // soft across the strand (max: no NaN at the very edge)
+  // flow texture along the strand; it stretches out near the mouth, where the gas moves fastest
+  float f = 1.0 - (1.0 - vS) * (1.0 - vS);
+  float flow = 0.7 + 0.3 * sin(f * 14.0 - uTime * 6.0 + vSeed * 6.283);
+  // the wisp gathers out of the cloud, then thins right out as it's drawn into the narrow mouth
+  float dens = smoothstep(0.0, 0.3, vS) * mix(1.0, 0.07, smoothstep(0.4, 0.9, vS));
+  float a = vA * prof * flow * dens * mix(0.2, 0.42, smoothstep(0.3, 0.8, vS));   // soft and faint while wide
   if (a < 0.003) discard;
-  vec3 smoke = vec3(0.34, 0.345, 0.36), sick = vec3(0.36, 0.52, 0.08);
-  gl_FragColor = vec4(mix(smoke, sick, smoothstep(0.45, 0.98, vS)), min(a, 1.0));
+  gl_FragColor = vec4(vec3(0.3, 0.302, 0.316), min(a, 1.0));   // the same smoke colour as the cloud
 }`;
 
 function rng(seed) { return () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }; }
@@ -51,7 +54,7 @@ export default function Streams({ I }) {
   const low = store.get().quality === "low";
   const mesh = useRef();
   const { geo, mat } = useMemo(() => {
-    const N = low ? 34 : 64, r = rng(11);
+    const N = low ? 50 : 96, r = rng(11);
     const V = N * SEG * 2;
     const pos = new Float32Array(V * 3), nxt = new Float32Array(V * 3), side = new Float32Array(V), s = new Float32Array(V),
       delay = new Float32Array(V), len = new Float32Array(V), seed = new Float32Array(V), wid = new Float32Array(V), idx = [];
@@ -62,8 +65,9 @@ export default function Streams({ I }) {
       const x0 = Math.cos(ang) * rx, z0 = (r() - 0.5) * 5;
       const r0 = Math.hypot(x0, z0), th0 = Math.atan2(z0, x0), h0 = y0 - MOUTH_Y, turn = 2.4 + r() * 1.8, ph = r() * 6.283;
       const at = (t, out) => {
-        // sink flow: radius and height shrink together (converging, gently curved paths); the swirl winds up near the mouth
-        const u = Math.min(1, Math.max(0, t)), w1 = 1 - u, rr = r0 * Math.pow(w1, 1.25) + 0.03 * w1, th = th0 + turn * u * u * u, hh = h0 * Math.pow(w1, 0.9);
+        // sink flow: the radius shrinks faster than the height, so the strands close into a narrow funnel above the
+        // mouth and go down its throat, like air through pursed lips; the swirl winds up near the mouth
+        const u = Math.min(1, Math.max(0, t)), w1 = 1 - u, rr = r0 * Math.pow(w1, 1.7) + 0.03 * w1, th = th0 + turn * u * u * u, hh = h0 * Math.pow(w1, 0.85);
         // a lazy meander that dies out as the strand is pulled taut near the mouth
         const wob = Math.sin(u * 7 + ph) * 0.45 * w1 * w1, wob2 = Math.sin(u * 4.3 + ph * 1.7) * 0.35 * w1 * w1;
         return out.set(Math.cos(th) * rr + wob * Math.sin(th), MOUTH_Y + hh + wob2, Math.sin(th) * rr - wob * Math.cos(th));

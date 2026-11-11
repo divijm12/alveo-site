@@ -4,12 +4,13 @@ One scroll story beside a live 3D stage (fixed, framed on the right; the story i
 Download button is in the nav the whole time.
 
 0. **Opening**: full screen, no story column. "Tastes like candy. Breathes like lead." sits in dense 3D vape smoke
-   (the same kind as the getalveo.app beta: soft noise sprites rising and curling, the odd faint red one, pushed
-   aside by the cursor; thicker, in depth, and thinner just over the words), with chemical labels hanging in it
+   (the same kind as the getalveo.app beta: soft noise sprites rising and curling, all one grey (no red patches,
+   RJ 2026-11-10), pushed aside by the cursor; thick, in depth, a bit thinner over the words), with chemical labels hanging in it
    (lead, formaldehyde, nicotine, nickel, acrolein, diacetyl, chromium, benzene, propylene glycol: all measured in
    e-cigarette aerosol in published studies, sources in `src/chems.js`; a note under the headline says amounts vary).
-   **The first scroll is the breath**: the words come apart, the smoke thins out and is drawn into the windpipe's
-   mouth as thin, converging strands of gas (turning the poison's colour as they tighten), the chemicals ride the
+   **The first scroll is the breath**, like drawing air through pursed lips: the words come apart, the smoke speeds
+   up toward the windpipe's mouth, stretches along the flow and closes into a narrow funnel, thinning right out
+   before it gets there; only faint grey strands go into the mouth (the green starts inside). The chemicals ride the
    same vortex, the camera follows, and the poison starts. When it has done its work, **five markers appear on
    the dead tissue** (nicotine, formaldehyde, acrolein, lead, nickel): hover / tap / focus one for its IUPAC name
    and one line (`FINDINGS` in `src/chems.js`). Back at the very top,
@@ -33,6 +34,8 @@ npm run build      # -> dist/ (relative paths; works from any folder)
 npm run dots       # re-read ../logo.svg -> src/data/lung.json (212 dots + physics wall)
 npm run sim-test   # headless check of the poison spread: 8 seeded puffs, damage + length
 node tools/shoot.mjs name 1440 900 --fire --at=2,5,12   # screenshots in shots/ (real Chrome); --fire = scroll a little (the breath)
+node tools/breath.mjs name 0.3 12                       # the breath frame by frame (page clock faked: exact times)
+python tools/sheet.py out.png a.png b.png ...           # contact sheet of screenshots
 ```
 
 | File | Role |
