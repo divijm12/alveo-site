@@ -109,8 +109,8 @@
 /* keep card content above the spotlight layers */
 
 /* ---------- shorter story (the punchlines live on the stage now) ---------- */
-.st-beat { min-height: 57vh; }
-.st-beat:first-child { min-height: 70vh; }
+.st-beat { min-height: 66vh; }
+.st-beat:first-child { min-height: 82vh; }
 .st-beat--quiet { min-height: 52vh; }
 .st-block { padding: 9vh 0 3vh; }
 .st-block:first-child { padding-top: 12vh; }

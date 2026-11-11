@@ -11,10 +11,9 @@
 import { Suspense, lazy, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { useStore, store, actions, live } from "./store.js";
+import { useStore, store, live } from "./store.js";
 import { DOWNLOADS } from "./config.js";
-import { startStory, healAllowed } from "./story.js";
-import { scrollToId } from "./smooth.js";
+import { scrollToId, lenis } from "./smooth.js";
 import { DeskMock } from "./sections/ProductIntro.jsx";
 import ScrollReveal from "./bits/ScrollReveal.jsx";
 import Magnet from "./bits/Magnet.jsx";
@@ -93,12 +92,14 @@ export default function App() {
       gsap.fromTo(".landing-in, .landing-cue", { autoAlpha: 1, y: 0, filter: "blur(0px)" }, { autoAlpha: 0, y: -50, filter: "blur(10px)", ease: "none", immediateRender: false,
         scrollTrigger: { trigger: "#landing", start: "top top", end: "45% top", scrub: true } });
       // the next scroll breathes the cloud in; back above it, it breathes out again (and the lungs are clean)
-      ScrollTrigger.create({ trigger: "#intro", start: "top top-=12%", onEnter: () => actions.fire(), onLeaveBack: () => actions.replay() });
+      // the breath and the poison follow the scroll (RJ 2026-11-11: with the scroll, not on their own): from just past
+      // the candy screen to the end of the problem. The scene maps this 0..1 onto its story time (Experience.jsx).
+      const story = s => { live.story = s.progress; };
+      ScrollTrigger.create({ trigger: "#intro", start: "top top-=10%", endTrigger: "#problem", end: "bottom 75%", onUpdate: story, onRefresh: story });
       // 02: the lungs relight across the solution chapter (jumped straight here? resolve the game first)
       const heal = s => { live.heal = s.progress; };
       ScrollTrigger.create({
-        trigger: "#solution", start: "top 65%", end: "bottom 70%",
-        onEnter: () => { if (store.get().phase === "idle") actions.skipToEnd(); },
+        trigger: "#solution", start: "top 35%", end: "bottom 70%",
         onUpdate: heal, onRefresh: heal,
       });
       const mm = gsap.matchMedia();
@@ -113,17 +114,16 @@ export default function App() {
       mm.add("(prefers-reduced-motion: reduce)", () => store.set({ deskCount: 51 }));
     }, root);
     document.fonts?.ready.then(() => ScrollTrigger.refresh());
-    // the lungs heal with the scroll, but at a limited speed: a fast flick through the solution still shows it
+    // the lungs heal with the scroll (eased the same way as the story), and only once the poison is done
     const healTick = (time, dms) => {
-      // the lungs heal only once the poison is done and the punchline has had its moment (story.js)
-      const h = store.get().heal, tgt = healAllowed() ? live.heal : 0; if (h === tgt) return;
-      const k = Math.min(dms, 50) / 1000 * 0.42;                // full heal takes at least ~2.4 s
-      const nh = store.get().reducedMotion ? tgt : h < tgt ? Math.min(tgt, h + k) : Math.max(tgt, h - k * 1.5);
+      const h = store.get().heal, tgt = store.get().phase === "done" ? live.heal : 0; if (h === tgt) return;
+      let nh = store.get().reducedMotion ? tgt : h + (tgt - h) * Math.min(1, Math.min(dms, 50) / 1000 * 4.5);
+      if (Math.abs(tgt - nh) < 0.002) nh = tgt;
       store.set({ heal: nh });
     };
     gsap.ticker.add(healTick);
-    const stopStory = startStory();
-    return () => { ctx.revert(); gsap.ticker.remove(healTick); stopStory(); };
+    if (import.meta.env.DEV) window.__story = { store, lenis, live };
+    return () => { ctx.revert(); gsap.ticker.remove(healTick); };
   }, []);
 
   const rise = lines => lines.map((l, i) => <span className="pi-mask" key={i}><span className="pi-rise">{l}</span></span>);

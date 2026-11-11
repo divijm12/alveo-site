@@ -29,14 +29,12 @@ Download button is in the nav the whole time.
    The poison washes out patch by patch as you read (if you got here early, the puff fast-forwards first).
 3. **03 Download**: both platforms, beside healthy, breathing lungs.
 
-**Fast scrolling skips nothing, and never feels stuck** (`src/story.js`, RJ 2026-11-11; a first version that held
-the page and swallowed scrolls felt broken). Input is never blocked: the 3D story plays on its own clock beside the
-text, wherever the reader is. The breath always plays to the end; the poison is never fast-forwarded to its end
-(x1.8 if the reader is already in the solution); "Every puff leaves a mark." and the markers show by the story's
-state, not the chapter; the lungs heal only once the poison is done + 1.8 s, and at a limited speed. The one
-soft spot: arriving at the candy screen fast, the scroll eases to a stop (rubber band, each wheel event still moves
-it) just before the breath until the words have had 1.5 s. If the reader is past the candy screen when the breath
-starts, its words fade out of the text's way; the chemical labels still ride the smoke in.
+**The story follows the scroll** (RJ 2026-11-11: "with scroll, not automatically"). One puff is recorded at load
+(`LungSim.record`) and the scene shows it at a story time set by the scroll (`live.story`, from just past the candy
+screen to the end of the problem; the breath gets the first 35%, the puff the rest; `applyStory` in
+`src/scene/Experience.jsx`). Stop scrolling and it stops; scroll back up and it plays backwards; a fast flick plays it
+fast (eased, never jumps). The lungs heal with the scroll through the solution, only once the puff is at its end.
+Input is never blocked (an earlier version that held the page felt stuck).
 `node tools/fastscroll.mjs` flicks hard down and up and flags any flick that doesn't move the page.
 
 Download URLs live in `src/config.js` (empty for now: buttons then jump to the Download section).
@@ -51,8 +49,8 @@ npm run dots       # re-read ../logo.svg -> src/data/lung.json (212 dots + physi
 npm run sim-test   # headless check of the poison spread: 8 seeded puffs, damage + length
 node tools/shoot.mjs name 1440 900 --fire --at=2,5,12   # screenshots in shots/ (real Chrome); --fire = scroll a little (the breath)
 node tools/sections.mjs                                 # height of each section, in screens
-node tools/fastscroll.mjs                               # hard flicks: the page always moves, the story still plays
-node tools/breath.mjs name 0.3 12                       # the breath frame by frame (page clock faked: exact times)
+node tools/fastscroll.mjs                               # hard flicks: the page always moves
+node tools/breath.mjs name 110 24                       # the story frame by frame, scrolling 110 px per frame (-110: back up)
 python tools/sheet.py out.png a.png b.png ...           # contact sheet of screenshots
 ```
 

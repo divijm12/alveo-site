@@ -24,9 +24,8 @@ export const store = {
 let snap = { ...state };
 store.subscribe(() => { snap = { ...state }; });
 export function useStore(sel = s => s) { return useSyncExternalStore(store.subscribe, () => sel(snap), () => sel(snap)); }
-// Imperative actions the scene registers (so DOM buttons can trigger them)
-export const actions = { fire: () => {}, replay: () => {}, skipToEnd: () => {} };
 // Values scroll writes and the scene reads every frame (no subscribers, no re-renders).
 //   open: 0..1, how far the landing has scrolled away = how much of the vape cloud has rolled in
-//   heal: 0..1, where the scroll is in the solution chapter (store.heal follows it at a limited speed)
-export const live = { open: 0, heal: 0 };
+//   heal: 0..1, where the scroll is in the solution chapter (store.heal follows it, eased)
+//   story: 0..1, where the scroll is between the candy screen and the end of the problem: the breath + the poison
+export const live = { open: 0, heal: 0, story: 0 };

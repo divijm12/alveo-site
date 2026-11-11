@@ -109,6 +109,40 @@ export class LungSim {
     }
   }
 
+  /** Record one whole puff up front, so the page can scrub it with the scroll, forwards and back (seek). */
+  record(maxSeconds = 30) {
+    this.reset(); this.release(); this.silent = true;
+    const frames = [], emit = [], front = [];
+    const snap = () => { frames.push(Float32Array.from(this.dots, d => d.tox)); emit.push(this.vapor.emit); front.push(this.vapor.front); };
+    snap();
+    for (let k = 1; !this.finished && this.time - this.released < maxSeconds; k++) { this.tick(); if (k % 2 === 0) snap(); }
+    snap();
+    this.silent = false;
+    this.rec = { dt: this.o.step * 2, frames, emit, front, end: this.time - this.released,
+      kill: Float32Array.from(this.dots, d => (d.alive ? -1 : d.killedAt - this.released)) };
+    this.seek(-1);
+  }
+
+  /** Show the recorded puff at `t` s after the release (t < 0: before it). Sets the same fields a live run does. */
+  seek(t) {
+    const R = this.rec, last = R.frames.length - 1;
+    const f = Math.max(0, t) / R.dt, i = Math.min(last, Math.floor(f)), j = Math.min(last, i + 1), a = Math.min(1, f - i);
+    const A = R.frames[i], B = R.frames[j];
+    let dead = 0;
+    for (const d of this.dots) {
+      d.tox = t < 0 ? 0 : A[d.i] + (B[d.i] - A[d.i]) * a;
+      d.health = Math.max(0, 1 - d.tox);
+      const k = R.kill[d.i];
+      d.alive = !(t >= 0 && k >= 0 && t >= k);
+      d.killedAt = d.alive ? -1 : k;
+      if (!d.alive) dead++;
+    }
+    this.time = t; this.released = t >= 0 ? 0 : -1; this.destroyed = dead;
+    this.finished = t >= R.end;
+    const lerp = arr => (t < 0 ? 0 : arr[i] + (arr[j] - arr[i]) * a);
+    this.vapor.emit = this.finished ? 0 : lerp(R.emit); this.vapor.front = lerp(R.front);
+  }
+
   /** Run a whole puff at once without drawing (reduced motion, tests). */
   runInstant(maxSeconds = 30) {
     this.release(); this.silent = true;                         // no events: callers set the end state themselves

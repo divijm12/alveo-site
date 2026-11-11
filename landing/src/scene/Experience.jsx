@@ -1,13 +1,13 @@
 // The 3D stage and its director. Owns the poison simulation, the opening sky (cloud puffs + chemicals), the inhale
-// (the sky spirals down into the windpipe's mouth, then the poison runs) and the camera shots, all on GSAP
-// timelines. Shots are framed from the viewport's aspect.
+// (the sky spirals down into the windpipe's mouth, then the poison runs) and the camera shots. All of it is a
+// function of the scroll (story time, see applyStory; RJ 2026-11-11: "with scroll, not automatically").
+// Shots are framed from the viewport's aspect.
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { EffectComposer, Bloom, Vignette, Noise, ToneMapping } from "@react-three/postprocessing";
 import { ToneMappingMode, BlendFunction } from "postprocessing";
 import { PerformanceMonitor } from "@react-three/drei";
 import * as THREE from "three";
-import gsap from "gsap";
 import Studio from "./Studio.jsx";
 import Lungs from "./Lungs.jsx";
 import Airway from "./Airway.jsx";
@@ -16,10 +16,14 @@ import Smoke, { SKY_Y } from "./Smoke.jsx";
 import Streams from "./Streams.jsx";
 import Markers from "./Markers.jsx";
 import { LungSim } from "../sim/LungSim.js";
-import { store, actions, live } from "../store.js";
+import { store, live } from "../store.js";
 import Callouts from "./Callouts.jsx";
 
 const FOV = 35;
+const RELEASE = 2.9;                 // s into the breath when the puff goes down the windpipe
+const BREATH = 0.35;                 // share of the story's scroll the breath gets
+const clamp01 = x => Math.min(1, Math.max(0, x)), lerp = (a, b, k) => a + (b - a) * k;
+const inOut2 = x => (x < 0.5 ? 2 * x * x : 1 - (-2 * x + 2) ** 2 / 2), inOutSine = x => -(Math.cos(Math.PI * x) - 1) / 2;
 const shake = { amp: 0 };            // camera shake (kept for small accents)
 
 // ---------- camera shots (centre + box to fit + sideways shift), from the aspect ratio ----------
@@ -96,34 +100,25 @@ function Director() {
   function becomeReady() {
     if (!ready.current.sim || !ready.current.gpu || store.get().phase !== "loading") return;
     store.set({ phase: "idle", stageReady: true });
-    // the reader got ahead of the loading: catch the story up
-    const ch = store.get().chapter;
-    if (ch === "problem") actions.fire(); else if (ch === "solution" || ch === "download") actions.skipToEnd();
   }
   const simRef = useRef(null), dock = useRef({ dock: 0 });
-  // animated proxies (GSAP writes, useFrame reads)
-  const I = useRef({ pull: 0, open: 0 }).current;              // open: the cloud rolling in as the landing scrolls away (eased toward live.open); pull: the inhale (1 = all breathed in)
+  // what the frame loop drives (Smoke / Streams read I): open = the cloud rolling in as the landing scrolls away,
+  // pull = the inhale (1 = all breathed in)
+  const I = useRef({ pull: 0, open: 0 }).current;
   const C = useRef({ ...SHOTS.sky(size.width / size.height) }).current;
-  const shot = useRef("sky"), tl = useRef(null), pointer = useRef({ x: 0, y: 0, sx: 0, sy: 0 });
+  const shot = useRef("sky"), pointer = useRef({ x: 0, y: 0, sx: 0, sy: 0 });
+  // story time T (s), set by the scroll (live.story 0..1, App), eased a little so a wheel notch glides:
+  //   0 .. RELEASE       the breath: the sky spirals down into the windpipe (camera follows it down)
+  //   RELEASE .. TOTAL   the recorded puff (sim.seek): vapor fills the windpipe, the poison spreads, patches die
+  // Nothing runs on its own clock: stop scrolling and the story stops; scroll back and it plays backwards.
+  const story = useRef({ t: 0, first: true }).current;
 
-  const goShot = (name, dur = 2, ease = "power3.inOut", extra = {}) => {
-    shot.current = name;
-    return gsap.to(C, { ...SHOTS[name](size.width / size.height), duration: dur, ease, overwrite: "auto", ...extra });
-  };
-
-  // simulation + event wiring
+  // simulation: one puff is recorded up front, then scrubbed
   useEffect(() => {
-    const sim = new LungSim(); simRef.current = sim;
-    const offs = [sim.on("kill", e => store.set({ destroyed: e.destroyed })), sim.on("done", () => finish())];
+    const sim = new LungSim(); sim.record(); simRef.current = sim;
     ready.current.sim = true; becomeReady();
-    return () => offs.forEach(f => f());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // keep the current shot framed on resize
-  useEffect(() => {
-    if (!gsap.isTweening(C)) Object.assign(C, SHOTS[shot.current](size.width / size.height));
-  }, [size.width, size.height]);
 
   useEffect(() => {
     const move = e => { pointer.current.x = (e.clientX / innerWidth) * 2 - 1; pointer.current.y = (e.clientY / innerHeight) * 2 - 1; };
@@ -131,61 +126,44 @@ function Director() {
     return () => removeEventListener("pointermove", move);
   }, []);
 
-  function finish() {
-    store.set({ phase: "done" });
-    goShot("play", 7, "sine.inOut", { z: SHOTS.play(size.width / size.height).z * 0.95 });
+  // story time -> everything on stage (deterministic, so scrubbing back and forth always matches)
+  function applyStory(T, aspect) {
+    const sim = simRef.current, TOTAL = RELEASE + sim.rec.end;
+    I.pull = (clamp01(T / 4.2)) ** 2;                            // power1.in, as the old timeline
+    dock.current.dock = T > 1.2 && T < 5.6 ? 1 : 0;
+    sim.seek(T - RELEASE);
+    // camera: sky -> wide (following the breath down) -> play (the lungs), then a slow push in while the poison spreads
+    const w1 = inOut2(clamp01((T - 0.5) / 3.4)), w2 = inOut2(clamp01((T - 4.3) / 2.6)), w3 = inOutSine(clamp01((T - 6.9) / Math.max(1, TOTAL - 6.9)));
+    const A = SHOTS.sky(aspect), B = SHOTS.wide(aspect), P = SHOTS.play(aspect);
+    for (const k in A) C[k] = lerp(lerp(A[k], B[k], w1), P[k], w2);
+    C.z *= 1 - 0.05 * w3;
+    shot.current = w1 < 0.5 ? "sky" : "play";
+    const phase = T <= 0.002 ? "idle" : T < RELEASE ? "inhaling" : T < TOTAL - 0.01 ? "running" : "done";
+    const g = store.get(), patch = {};
+    if (g.phase !== phase) patch.phase = phase;
+    if (g.destroyed !== sim.destroyed) patch.destroyed = sim.destroyed;
+    if (patch.phase || "destroyed" in patch) store.set(patch);
   }
 
-  // the breath: the sky spirals down into the windpipe; as the first of it reaches the mouth, the poison starts
-  actions.fire = () => {
-    const sim = simRef.current;
-    if (!sim || store.get().phase !== "idle") return;
-    if (store.get().reducedMotion) { actions.skipToEnd(); return; }
-    store.set({ phase: "inhaling" });
-    tl.current?.kill();
-    const t = gsap.timeline();
-    // the cloud starts to turn while we still look at the sky, then the camera follows it down to the mouth
-    t.to(I, { pull: 1, duration: 4.2, ease: "power1.in" }, 0)
-      .add(goShot("wide", 3.4, "power2.inOut"), 0.5)
-      .add(() => { dock.current.dock = 1; }, 1.2)
-      .add(() => { store.set({ phase: "running" }); sim.release(); }, 2.9)
-      .add(goShot("play", 2.6, "power2.inOut"), 4.3)
-      .add(() => { dock.current.dock = 0; }, 5.6);
-    tl.current = t;
-  };
-
-  actions.skipToEnd = () => {
-    const sim = simRef.current;
-    if (!sim || store.get().phase !== "idle") return;
-    tl.current?.kill(); sim.reset(); sim.runInstant();
-    I.pull = 1;
-    Object.assign(C, SHOTS.play(size.width / size.height)); shot.current = "play";
-    store.set({ phase: "done", destroyed: sim.destroyed });
-  };
-
-  // back to the top: the cloud breathes back out of the windpipe and the lungs are clean again
-  actions.replay = () => {
-    const sim = simRef.current; if (!sim || store.get().phase === "idle" || store.get().phase === "loading") return;
-    tl.current?.kill();
-    sim.reset(); store.set({ phase: "idle", destroyed: 0 });
-    dock.current.dock = 0;
-    const still = store.get().reducedMotion;
-    gsap.to(I, { pull: 0, duration: still ? 0 : 2.6, ease: "power2.out", overwrite: true });
-    if (still) { Object.assign(C, SHOTS.sky(size.width / size.height)); shot.current = "sky"; } else goShot("sky", 2.4, "power3.inOut");
-  };
-
   const look = useMemo(() => new THREE.Vector3(), []);
-  if (import.meta.env.DEV) window.__alveo = { camera, C, I, simRef, shake, gl, scene };
+  if (import.meta.env.DEV) window.__alveo = { camera, C, I, simRef, shake, gl, scene, story };
   // runs first every frame (see <Rig>): the clouds project the chemical labels with this frame's camera
   const frame = useRef(); frame.current = (state, rawDt) => {
     const dt = Math.min(rawDt, 0.05), t = state.clock.elapsedTime;
     const sim = simRef.current;
     // the cloud follows the scroll off the landing, eased so it rolls in rather than snapping
     I.open = store.get().reducedMotion ? live.open : I.open + (live.open - I.open) * Math.min(1, dt * 2.4);
-    const { heal, phase } = store.get();
-    // reader already reached the healing part while the poison still spreads: fast-forward to the end
-    // reader already in the solution while the poison spreads: a little faster, but it still plays to the end
-    if (sim) sim.update(phase === "running" && live.heal > 0.001 ? dt * 1.8 : dt);
+    // the story follows the scroll (eased); reduced motion: no in-between, it's the start or the end
+    if (sim && store.get().phase !== "loading") {
+      // the breath gets the first 35% of the scroll (it's the hook), the puff the rest
+      const TOTAL = RELEASE + sim.rec.end, p = live.story;
+      const target = p < BREATH ? p / BREATH * RELEASE : RELEASE + (p - BREATH) / (1 - BREATH) * sim.rec.end;
+      if (store.get().reducedMotion) story.t = live.story > 0 ? TOTAL : 0;
+      else if (story.first) story.t = target;                  // page opened part-way down: no replay from the top
+      else { story.t += (target - story.t) * Math.min(1, dt * 4.5); if (Math.abs(target - story.t) < 0.004) story.t = target; }
+      story.first = false;
+      applyStory(story.t, size.width / size.height);
+    }
     // camera: shot + pointer parallax + shake
     const p = pointer.current; p.sx += (p.x - p.sx) * Math.min(1, dt * 3); p.sy += (p.y - p.sy) * Math.min(1, dt * 3);
     shake.amp *= Math.exp(-dt * 5);

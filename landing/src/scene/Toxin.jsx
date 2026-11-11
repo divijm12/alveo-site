@@ -62,12 +62,13 @@ export default function Toxin({ simRef }) {
     P.front.length = 0;
     for (const d of sim.dots) if (d.tox > 0.04 && d.tox < 1.1) P.front.push(d);
     const running = sim.released >= 0 && !sim.finished;
+    const carY = TRACHEA.carina, frontY = PORT_Y - 0.2 - sim.vapor.front * (PORT_Y - 0.2 - carY);
     // pour: vapor while the vape exhales
     if (running && sim.vapor.emit > 0) {
       P.acc += dt * (low ? 220 : 480) * sim.vapor.emit;
       for (; P.acc >= 1; P.acc--) {
         const haze = Math.random() < 0.82;
-        spawn((Math.random() - 0.5) * 0.12, PORT_Y - 0.2 - Math.random() * 0.15, (Math.random() - 0.5) * 0.12,
+        spawn((Math.random() - 0.5) * 0.12, Math.max(frontY, PORT_Y - 0.2 - Math.random() * 0.15), (Math.random() - 0.5) * 0.12,
           (Math.random() - 0.5) * 0.2, -2.6 - Math.random() * 1.2, 2.6 + Math.random() * 1.6, 0, haze);
       }
     }
@@ -81,7 +82,7 @@ export default function Toxin({ simRef }) {
       }
     }
     // move
-    const carY = TRACHEA.carina, hw = TRACHEA.halfWidth * 0.85, frontY = PORT_Y - 0.2 - sim.vapor.front * (PORT_Y - 0.2 - carY);
+    const hw = TRACHEA.halfWidth * 0.85;
     for (let i = 0; i < N; i++) {
       if (P.life[i] >= P.max[i]) { P.a[i] = 0; continue; }
       P.life[i] += dt;
@@ -92,9 +93,11 @@ export default function Toxin({ simRef }) {
       if (m === 0) {                                             // pour: never ahead of the vapor front, so the pipe fills top down
         vx += wob * dt * 1.2; vx -= x * dt * 9;
         if (Math.abs(x) > hw) x = Math.sign(x) * hw;
+        if (y < frontY - 0.08) { P.life[i] = P.max[i]; P.a[i] = 0; continue; }   // scrolled back: the front went up past it
         if (sim.vapor.front < 1 && y + vy * dt < frontY) { y = frontY + Math.random() * 0.04; vy = -0.15 - Math.random() * 0.3; }
         if (y < carY + 0.05) { P.mode[i] = 1; P.side[i] = Math.random() < sim.side[0] / (sim.side[0] + sim.side[1]) ? 0 : 1; }
       } else if (m === 1 || m === 2) {
+        if (sim.vapor.front < 1) { P.life[i] = P.max[i]; P.a[i] = 0; continue; }   // scrolled back above the lungs
         let tx, ty, sp;
         if (m === 1) { [tx, ty] = BRONCHI[P.side[i]]; sp = 1.5; }
         else {
