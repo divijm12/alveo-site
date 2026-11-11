@@ -3,12 +3,12 @@
 One scroll story beside a live 3D stage (fixed, framed on the right; the story is a column on the left). The
 Download button is in the nav the whole time.
 
-0. **Opening**: full screen, no story column. "Tastes like candy. Breathes like lead." sits in a hollow inside a
-   dark 3D cumulus cloud that closes in around it in the first seconds (mist wisps cut from the same puffs drift
-   over the edges of the words), with chemical labels hanging in it
+0. **Opening**: full screen, no story column. "Tastes like candy. Breathes like lead." sits in dense 3D vape smoke
+   (the same kind as the getalveo.app beta: soft noise sprites rising and curling, the odd faint red one, pushed
+   aside by the cursor; thicker, in depth, and thinner just over the words), with chemical labels hanging in it
    (lead, formaldehyde, nicotine, nickel, acrolein, diacetyl, chromium, benzene, propylene glycol: all measured in
    e-cigarette aerosol in published studies, sources in `src/chems.js`; a note under the headline says amounts vary).
-   **The first scroll is the breath**: the words come apart, the cloud thins out and is drawn into the windpipe's
+   **The first scroll is the breath**: the words come apart, the smoke thins out and is drawn into the windpipe's
    mouth as thin, converging strands of gas (turning the poison's colour as they tighten), the chemicals ride the
    same vortex, the camera follows, and the poison starts. When it has done its work, **five markers appear on
    the dead tissue** (nicotine, formaldehyde, acrolein, lead, nickel): hover / tap / focus one for its IUPAC name
@@ -42,11 +42,11 @@ node tools/shoot.mjs name 1440 900 --fire --at=2,5,12   # screenshots in shots/ 
 | `src/scene/Lungs.jsx` | tissue membrane (capillary shader + toxin field canvas: veins carry the poison, stain, tar), 212 soft air sacs (one per logo dot: mottled flesh -> bruised bile -> acid flare -> shrivelled oily husk), airway inlay, rail |
 | `src/scene/Toxin.jsx` | pooled vapor particles (pour down the windpipe, split, seep toward the poison's edge, fumes off dead tissue) + one green light |
 | `src/scene/Airway.jsx` | C-ring windpipe and docking port |
-| `src/scene/Clouds.jsx` | the opening sky: ~90 camera-facing cloud puffs sorted back to front, crosswind drift, the inhale vortex (`I.pull`); projects the chemical labels' 3D anchors onto the page every frame |
+| `src/scene/Smoke.jsx` | the opening smoke: ~130 camera-facing smoke sprites sorted back to front, rising + curling, cursor push with spring-back (as on the beta), the inhale vortex (`I.pull`); projects the chemical labels' 3D anchors onto the page every frame |
 | `src/scene/Streams.jsx` | the breath: ~64 gas strands (fixed sink-flow curves, a travelling window driven by one uniform), screen-space ribbons a few px wide, thinning to a hairline at the mouth |
 | `src/scene/Markers.jsx`, `src/Findings.jsx` | after the puff: picks 5 dead patches far apart, projects them every frame for the DOM markers; the markers + cards (hover, tap, keyboard; cards open toward free space) |
 | `src/Intro.jsx`, `src/chems.js` | the opening overlay: headline (per-letter dissolve on the breath), mist wisps, chemical labels, honesty note, scroll cue; the chemical list + sources |
-| `src/cloudTex.js`, `src/cloudWorker.js` | the puff atlas (4 cumulus variants: smooth-blended billow domes, height-field normals + a shadow march), built in a Web Worker (never blocks the page) |
+| `src/cloudTex.js`, `src/cloudWorker.js` | the smoke-sprite atlas (3 plumes + 1 long wisp: domain-warped fbm under a soft round falloff, ridged filaments, no lighting), built in a Web Worker (never blocks the page) |
 | `src/App.jsx`, `src/story.css` | the page: nav, story column, scroll triggers (fire on #problem, heal across #solution). Colour tokens in `styles.css`: brand red + `--tox` (the poison's green, used sparingly) |
 | `src/sections/ProductIntro.jsx` | the mocks reused by the page (menu bar + puff card, pace chart, privacy diagram) |
 | `src/config.js` | download links (TODO) |

@@ -9,7 +9,7 @@ import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { PORT_Y } from "./Airway.jsx";
-import { SKY_Y } from "./Clouds.jsx";
+import { SKY_Y } from "./Smoke.jsx";
 import { store } from "../store.js";
 
 const SEG = 90;                       // points along each strand

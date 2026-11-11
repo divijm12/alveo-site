@@ -1,6 +1,6 @@
 // The opening screen, over the 3D sky: the headline floats in the cloud (mist wisps drift in front of and behind
 // it, cut from the same procedural puffs as the 3D clouds), with the chemicals that are really in the aerosol
-// hanging among the clouds (the 3D scene positions those labels every frame, see scene/Clouds.jsx).
+// hanging in the smoke (the 3D scene positions those labels every frame, see scene/Smoke.jsx).
 // When the breath starts (phase leaves "idle") the words come apart into the haze and the mist is drawn down
 // after the cloud; on replay they gather again.
 import { useEffect, useRef } from "react";

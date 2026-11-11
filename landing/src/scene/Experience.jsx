@@ -12,7 +12,7 @@ import Studio from "./Studio.jsx";
 import Lungs from "./Lungs.jsx";
 import Airway from "./Airway.jsx";
 import Toxin from "./Toxin.jsx";
-import Clouds, { SKY_Y } from "./Clouds.jsx";
+import Smoke, { SKY_Y } from "./Smoke.jsx";
 import Streams from "./Streams.jsx";
 import Markers from "./Markers.jsx";
 import { LungSim } from "../sim/LungSim.js";
@@ -95,7 +95,7 @@ function Director() {
   function becomeReady() {
     if (!ready.current.sim || !ready.current.gpu || store.get().phase !== "loading") return;
     store.set({ phase: "idle", stageReady: true });
-    // the first seconds: the cloud closes in around the words
+    // the first seconds: the smoke rolls in around the words
     if (store.get().reducedMotion) I.open = 1; else gsap.to(I, { open: 1, duration: 3.4, ease: "expo.out" });
     // the reader got ahead of the loading: catch the story up
     const ch = store.get().chapter;
@@ -202,7 +202,7 @@ function Director() {
       <Airway dockRef={dock} />
       <Lungs simRef={simRef} />
       <Toxin simRef={simRef} />
-      <Clouds I={I} />
+      <Smoke I={I} />
       <Streams I={I} />
       <Markers simRef={simRef} />
     </group>
