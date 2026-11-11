@@ -10,8 +10,9 @@ import { useMemo, useRef, useLayoutEffect } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import lung from "../data/lung.json";
-import { toWorld, S, TRACHEA } from "../sim/LungSim.js";
+import { toWorld, S, TRACHEA, BRONCHI } from "../sim/LungSim.js";
 import { store } from "../store.js";
+import { breathAt, tickVital, vital } from "./breath.js";
 
 const PLATE_Z = -0.3;
 const PIPE_TOP = TRACHEA.top + 0.02 - 0.2;                       // where the vapor front starts (same as Airway / Toxin)
@@ -35,9 +36,9 @@ const vec3 ACID = vec3(0.62, 1.0, 0.12);
 `;
 
 const sacVert = /* glsl */ `
-attribute vec3 aColor; attribute float aTox; attribute float aDead; attribute float aSeed; attribute float aBurn;
+attribute vec3 aColor; attribute float aTox; attribute float aDead; attribute float aSeed; attribute float aBurn; attribute float aAir;
 uniform float uTime;
-varying vec3 vN; varying vec3 vV; varying vec3 vColor; varying float vTox; varying float vDead; varying float vSeed; varying float vBurn; varying vec3 vO;
+varying vec3 vN; varying vec3 vV; varying vec3 vColor; varying float vTox; varying float vDead; varying float vSeed; varying float vBurn; varying vec3 vO; varying float vAir;
 ${NOISE}
 void main() {
   vec3 p = position; vO = position;
@@ -46,14 +47,15 @@ void main() {
   float bud = n3(p * 4.6 + aSeed * 11.0);                       // smaller sacs budding off (grape-like)
   float wrinkle = n3(p * 7.0 + aSeed * 3.0);
   float swell = 1.0 + 0.05 * sin(uTime * 1.3 + aSeed * 6.283) * (1.0 - aDead);
+  swell += 0.07 * aAir;                                          // healthy: each sac fills as the breath reaches it
   p *= swell * (1.0 + (lump - 0.5) * 0.3 + (bud - 0.5) * 0.14 - aDead * (0.3 + 0.38 * wrinkle));
   vec4 mv = modelViewMatrix * instanceMatrix * vec4(p, 1.0);
   vN = normalize(normalMatrix * mat3(instanceMatrix) * normal);
-  vV = -mv.xyz; vColor = aColor; vTox = aTox; vDead = aDead; vSeed = aSeed; vBurn = aBurn;
+  vV = -mv.xyz; vColor = aColor; vTox = aTox; vDead = aDead; vSeed = aSeed; vBurn = aBurn; vAir = aAir;
   gl_Position = projectionMatrix * mv;
 }`;
 const sacFrag = /* glsl */ `
-varying vec3 vN; varying vec3 vV; varying vec3 vColor; varying float vTox; varying float vDead; varying float vSeed; varying float vBurn; varying vec3 vO;
+varying vec3 vN; varying vec3 vV; varying vec3 vColor; varying float vTox; varying float vDead; varying float vSeed; varying float vBurn; varying vec3 vO; varying float vAir;
 uniform float uTime;
 ${NOISE}
 void main() {
@@ -79,13 +81,15 @@ void main() {
   col = mix(col, husk, vDead);
   col += ACID * vBurn * (0.6 + 1.6 * fres);                   // the moment it dies
   col += vec3(1.0, 0.92, 0.88) * spec * 0.09 * (1.0 - vDead) * (1.0 - soak * 0.5);   // wet, not glossy
+  // healthy breath: oxygen-rich blood flushes the sac from within (warm crimson, brightest at the core)
+  col += vec3(0.95, 0.16, 0.15) * vAir * (0.08 + 0.42 * pow(nv, 1.3)) * (0.7 + 0.5 * mott) * (1.0 - vDead);
   gl_FragColor = vec4(max(col, vec3(0.0)), 1.0);
   #include <colorspace_fragment>
 }`;
 
 const membraneVert = /* glsl */ `varying vec2 vP; void main(){ vP = position.xy; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
 const membraneFrag = /* glsl */ `
-varying vec2 vP; uniform sampler2D uField; uniform vec4 uBox; uniform float uTime; uniform float uHealthy;
+varying vec2 vP; uniform sampler2D uField; uniform vec4 uBox; uniform float uTime; uniform float uHealthy; uniform float uAir;
 ${NOISE}
 void main() {
   vec4 F = texture2D(uField, (vP - uBox.xy) / uBox.zw);
@@ -96,6 +100,7 @@ void main() {
   float vein = pow(1.0 - abs(n * 2.0 - 1.0), 12.0);                     // thick vessels
   float fine = pow(1.0 - abs(fbm(q * 3.2 + w * 2.6) * 2.0 - 1.0), 16.0); // capillaries
   vec3 tissue = vec3(0.03, 0.004, 0.006) + vec3(0.26, 0.016, 0.024) * (vein * 0.6 + fine * 0.3) * (0.6 + 0.4 * uHealthy);
+  tissue += vec3(0.42, 0.03, 0.04) * (vein * 0.7 + fine * 0.6) * uAir;                       // healthy: vessels flush with each breath
   // the stain spreads unevenly; the poison runs ahead of it along the vessels
   float reach = smoothstep(0.1, 0.75, tox + (n - 0.5) * 0.7);
   float run = smoothstep(0.02, 0.25, tox * (0.55 + 0.9 * vein));
@@ -123,7 +128,7 @@ export default function Lungs({ simRef }) {
   const sacs = useRef(), inlayMat = useRef(), sacMat = useRef(), memMat = useRef(), railMat = useRef(), group = useRef();
   const n = lung.dots.length;
 
-  const { sacGeo, plateGeo, memGeo, inlayGeo, railGeo, attrs, base, order, field } = useMemo(() => {
+  const { sacGeo, plateGeo, memGeo, inlayGeo, railGeo, attrs, base, order, field, reach } = useMemo(() => {
     const sacGeo = new THREE.IcosahedronGeometry(1, 4); sacGeo.scale(1, 1, 0.42);
     const shape = new THREE.Shape(lung.wall.map(([x, y]) => new THREE.Vector2(...toWorld(x, y))).reverse());
     const plateGeo = new THREE.ExtrudeGeometry(shape, { depth: 0.14, bevelEnabled: true, bevelThickness: 0.05, bevelSize: 0.05, bevelSegments: 4, curveSegments: 1 });
@@ -138,7 +143,7 @@ export default function Lungs({ simRef }) {
     // heal order: scattered but drifting top -> bottom, so recovery looks organic
     const order = lung.dots.map((d, i) => 0.62 * frac(Math.sin(i * 127.1 + 3.7) * 43758.5453) + 0.38 * ((d.y - 300) / 530));
     const mk = k => new THREE.InstancedBufferAttribute(new Float32Array(n * k), k).setUsage(THREE.DynamicDrawUsage);
-    const attrs = { aColor: mk(3), aTox: mk(1), aDead: mk(1), aBurn: mk(1), aSeed: new THREE.InstancedBufferAttribute(Float32Array.from(lung.dots, (_, i) => frac(Math.sin(i * 91.7) * 4375.85)), 1) };
+    const attrs = { aColor: mk(3), aTox: mk(1), aDead: mk(1), aBurn: mk(1), aAir: mk(1), aSeed: new THREE.InstancedBufferAttribute(Float32Array.from(lung.dots, (_, i) => frac(Math.sin(i * 91.7) * 4375.85)), 1) };
     Object.entries(attrs).forEach(([k, a]) => sacGeo.setAttribute(k, a));
     // rail along the membrane edge: keeps the lung silhouette readable however much is lost
     const curve = new THREE.CatmullRomCurve3(lung.wall.map(([x, y]) => new THREE.Vector3(...toWorld(x, y), 0)), true, "centripetal");
@@ -147,7 +152,9 @@ export default function Lungs({ simRef }) {
     const canvas = document.createElement("canvas"); canvas.width = FW; canvas.height = FH;
     const tex = new THREE.CanvasTexture(canvas); tex.minFilter = tex.magFilter = THREE.LinearFilter; tex.generateMipmaps = false;
     const field = { canvas, ctx: canvas.getContext("2d"), tex, last: -1 };
-    return { sacGeo, plateGeo, memGeo, inlayGeo, railGeo, attrs, base, order, field };
+    // how far each sac is from the airway ends: the breath reaches the near ones first
+    const reach = lung.dots.map(d => { const [x, y] = toWorld(d.x, d.y); return Math.min(...BRONCHI.map(([bx, by]) => Math.hypot(x - bx, y - by))); });
+    return { sacGeo, plateGeo, memGeo, inlayGeo, railGeo, attrs, base, order, field, reach };
   }, [n]);
 
   useLayoutEffect(() => {
@@ -165,7 +172,10 @@ export default function Lungs({ simRef }) {
     const sim = simRef.current; if (!sim) return;
     const { phase } = store.get(), heal = phase === "done" ? store.get().heal : 0;   // wash out only after the puff
     const time = state.clock.elapsedTime;
-    group.current.scale.setScalar(1 + 0.012 * heal * Math.sin(time * 1.25));     // healed lungs breathe
+    // healed lungs breathe a little; at Download they breathe properly (breath.js)
+    tickVital(dt);
+    const v = vital.v, b = breathAt(time), idle = 0.012 * heal * Math.sin(time * 1.25) * (1 - v);
+    group.current.scale.set(1 + idle + 0.028 * v * b, 1 + idle + 0.04 * v * b, 1);
     const t = sim.time;
     let sum = 0;
     for (let i = 0; i < n; i++) {
@@ -180,13 +190,15 @@ export default function Lungs({ simRef }) {
       attrs.aTox.setX(i, tox);
       attrs.aDead.setX(i, dead);
       attrs.aBurn.setX(i, d.alive ? 0 : Math.exp(-since / 0.45) * (1 - healed));
+      attrs.aAir.setX(i, v ? v * breathAt(time - reach[i] * 0.28) : 0);   // the flush travels out from the airways
     }
-    attrs.aColor.needsUpdate = attrs.aTox.needsUpdate = attrs.aDead.needsUpdate = attrs.aBurn.needsUpdate = true;
+    attrs.aColor.needsUpdate = attrs.aTox.needsUpdate = attrs.aDead.needsUpdate = attrs.aBurn.needsUpdate = attrs.aAir.needsUpdate = true;
     if (Math.abs(sum - field.last) > 1e-3) { drawField(field, sim.dots, eff); field.last = sum; }
     sacMat.current.uniforms.uTime.value = time;
     memMat.current.uniforms.uTime.value = time;
     const lost = sim.destroyed / n * (1 - heal);
     memMat.current.uniforms.uHealthy.value = 1 - lost;
+    memMat.current.uniforms.uAir.value = v * (0.35 + 0.65 * breathAt(time - 0.25));
     // the airway carries the vapor: dull red at rest, sick green while the puff runs through it, filling from the top
     // down with the vapor front (windpipe, then the bronchi), never all at once
     const busy = sim.released >= 0 && !sim.finished ? sim.vapor.emit : 0;
@@ -199,7 +211,8 @@ export default function Lungs({ simRef }) {
       u.uFill.value = Math.max(tgt, u.uFill.value - dt * 1.4);
     }
     u.uTime.value = time; u.uLevel.value = 1 - lost * 0.7;
-    railMat.current.emissiveIntensity = 0.12 + 0.3 * (1 - lost);
+    railMat.current.emissiveIntensity = 0.12 + 0.3 * (1 - lost) + 0.45 * v * b;
+    u.uAir.value = v * b;
   });
 
   return (
@@ -209,19 +222,20 @@ export default function Lungs({ simRef }) {
       </mesh>
       <mesh geometry={memGeo} position={[0, 0, FACE_Z]}>
         <shaderMaterial ref={memMat} vertexShader={membraneVert} fragmentShader={membraneFrag}
-          uniforms={{ uField: { value: field.tex }, uBox: { value: new THREE.Vector4(BOX.x, BOX.y, BOX.w, BOX.h) }, uTime: { value: 0 }, uHealthy: { value: 1 } }} />
+          uniforms={{ uField: { value: field.tex }, uBox: { value: new THREE.Vector4(BOX.x, BOX.y, BOX.w, BOX.h) }, uTime: { value: 0 }, uHealthy: { value: 1 }, uAir: { value: 0 } }} />
       </mesh>
       <mesh geometry={railGeo} position={[0, 0, FACE_Z + 0.02]}>
         <meshStandardMaterial ref={railMat} color="#2a1a1c" metalness={0.6} roughness={0.35} emissive="#ff2d2d" emissiveIntensity={0.4} />
       </mesh>
       <mesh geometry={inlayGeo} position={[0, 0, FACE_Z + 0.01]}>
         <shaderMaterial ref={inlayMat}
-          uniforms={{ uTime: { value: 0 }, uBusy: { value: 0 }, uLevel: { value: 1 }, uFill: { value: AIR_TOP } }}
+          uniforms={{ uTime: { value: 0 }, uBusy: { value: 0 }, uLevel: { value: 1 }, uFill: { value: AIR_TOP }, uAir: { value: 0 } }}
           vertexShader={`varying vec3 vP; void main(){ vP = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }`}
-          fragmentShader={`varying vec3 vP; uniform float uTime, uBusy, uLevel, uFill;
+          fragmentShader={`varying vec3 vP; uniform float uTime, uBusy, uLevel, uFill, uAir;
             void main(){ float flow = 0.5 + 0.5 * sin(vP.y * 11.0 + uTime * 6.0);
               vec3 rest = vec3(0.26, 0.012, 0.02) * uLevel, sick = vec3(0.5, 0.85, 0.08) * (0.7 + 1.1 * flow);
               float filled = smoothstep(uFill - 0.05, uFill + 0.05, vP.y), edge = exp(-pow((vP.y - uFill) / 0.1, 2.0)) * step(uFill, 8.0);
+              rest *= 1.0 + uAir * 2.2;                                  // healthy: the airway brightens as air goes in
               gl_FragColor = vec4(mix(rest * (0.75 + 0.15 * flow), sick * (0.8 + 0.6 * edge), uBusy * filled), 1.0);
               #include <colorspace_fragment>
             }`} />

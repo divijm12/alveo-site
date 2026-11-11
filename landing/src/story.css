@@ -286,3 +286,8 @@
 /* more room per beat: the breath + poison play over this scroll, so a steady scroll gives a steady story */
 .st-beat { min-height: 92vh; }
 .st-beat:first-child { min-height: 108vh; }
+
+/* the real app screenshot + one privacy line (RJ 2026-11-11: the small print was a waste) */
+.st-shot { display: block; width: 100%; height: auto; border-radius: 18px; box-shadow: 0 30px 80px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.07); }
+.st-private { display: flex; align-items: center; gap: 12px; margin: 28px 0 0; font-size: clamp(1rem, 1.25vw, 1.15rem); color: var(--ink-2); }
+.st-private i { flex: none; width: 8px; height: 8px; border-radius: 50%; background: #f1f1f3; box-shadow: 0 0 0 4px rgba(241,241,243,.12); }

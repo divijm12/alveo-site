@@ -14,7 +14,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useStore, store, live } from "./store.js";
 import { DOWNLOADS } from "./config.js";
 import { scrollToId, lenis } from "./smooth.js";
-import { DeskMock } from "./sections/ProductIntro.jsx";
+import alertCard from "./assets/alert-card.webp";
 import ScrollReveal from "./bits/ScrollReveal.jsx";
 import Magnet from "./bits/Magnet.jsx";
 import SpotlightCard from "./bits/SpotlightCard.jsx";
@@ -67,7 +67,6 @@ function useThrottled(value, ms) {
 function Marks() {
   return <b>{useThrottled(useStore(s => s.destroyed), 160)}</b>;
 }
-function LiveDesk() { return <DeskMock count={useStore(s => s.deskCount)} />; }
 
 export default function App() {
   const os = useMemo(detectOS, []);
@@ -76,8 +75,8 @@ export default function App() {
   // which line shows under the lungs: the punchline once the game is over, then what Alveo does as they relight
   // (by the story's state, not the chapter: a reader who scrolled ahead still gets the punchline)
   const words = useStore(s => s.phase === "done" && s.heal < 0.1 ? "mark"
-    : s.chapter === "solution" && s.heal >= 0.1 && s.heal < 0.6 ? "count" : "");
-  const root = useRef(), deskRef = useRef();
+    : s.chapter === "solution" && s.heal >= 0.1 && s.heal < 0.6 ? "count" : s.chapter === "download" ? "breathe" : "");
+  const root = useRef();
 
   useLayoutEffect(() => {
     const ctx = gsap.context(() => {
@@ -97,6 +96,9 @@ export default function App() {
       const story = s => { live.story = s.progress; };
       ScrollTrigger.create({ trigger: "#intro", start: "top top-=10%", endTrigger: "#problem", end: "bottom 75%", onUpdate: story, onRefresh: story });
       // 02: the lungs relight across the solution chapter (jumped straight here? resolve the game first)
+      // 03: the healthy lungs breathe as Download comes in (scene/breath.js)
+      const calm = s => { live.calm = s.progress; };
+      ScrollTrigger.create({ trigger: "#download", start: "top 85%", end: "top 30%", onUpdate: calm, onRefresh: calm });
       const heal = s => { live.heal = s.progress; };
       ScrollTrigger.create({
         trigger: "#solution", start: "top 35%", end: "bottom 70%",
@@ -109,9 +111,7 @@ export default function App() {
           onEnter: els => gsap.fromTo(els, { y: 28, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 1.1, ease: "power3.out", stagger: 0.08, overwrite: true }) });
         document.querySelectorAll(".st-beat h2").forEach(h => h.querySelector(".pi-rise") && gsap.from(h.querySelectorAll(".pi-rise"), {
           yPercent: 115, duration: 1.2, ease: "expo.out", stagger: 0.08, scrollTrigger: { trigger: h, start: "top 80%" } }));
-        ScrollTrigger.create({ trigger: deskRef.current, start: "top 85%", end: "center 45%", onUpdate: s => store.set({ deskCount: 44 + Math.round(s.progress * 7) }) });
       });
-      mm.add("(prefers-reduced-motion: reduce)", () => store.set({ deskCount: 51 }));
     }, root);
     document.fonts?.ready.then(() => ScrollTrigger.refresh());
     // the lungs heal with the scroll (eased the same way as the story), and only once the poison is done
@@ -171,6 +171,7 @@ export default function App() {
         <div className="stage-words" aria-hidden="true">
           <p className={words === "mark" ? "on" : ""}>Every puff <em>leaves a mark.</em></p>
           <p className={words === "count" ? "on" : ""}>Alveo counts every puff <em>for you.</em></p>
+          <p className={words === "breathe" ? "on" : ""}>Fewer puffs. <em>More breath.</em></p>
         </div>
         <div className={`stage-cap is-${chapter}`} data-phase={phase} aria-hidden="true">
           <div className="cap-marks">
@@ -194,11 +195,11 @@ export default function App() {
           <div className="st-beat">
             <p className="pi-eyebrow"><span className="pi-eyebrow__n">01</span>The problem</p>
             <ScrollReveal {...reveal}>One puff takes two seconds.</ScrollReveal>
-            <p className="pi-lead st-rv">Hit the vape, exhale, back to the screen. At your desk it's always in reach, so the puffs add up quietly, all day, and nobody counts them.</p>
+            <p className="pi-lead st-rv">Hit the vape, exhale, back to the screen.</p>
           </div>
           <div className="st-beat">
             <ScrollReveal {...reveal}>You can't cut what you can't see.</ScrollReveal>
-            <p className="pi-lead st-rv">A guess is easy. A real number is what lets you bring it down.</p>
+            <p className="pi-lead st-rv">A guess is easy to fudge. A real number is a fact you can't argue with.</p>
           </div>
           <p className="sr">Every puff leaves a mark.</p>
         </section>
@@ -208,18 +209,15 @@ export default function App() {
           <div className="st-block">
             <p className="pi-eyebrow st-rv"><span className="pi-eyebrow__n">02</span>How Alveo helps</p>
             <h2 className="pi-title st-h2 st-rv">Notice every puff.<br />Then have fewer.</h2>
-            <p className="pi-lead st-rv">Alveo uses your webcam to count the puffs you take at your desk, and keeps today's count in your menu bar (the system tray on Windows).</p>
-            <div className="st-mock st-rv" ref={deskRef}>
-              <GlareHover width="100%" borderRadius="22px" glareColor="#ffffff" glareOpacity={0.22} glareSize={40} glareAngle={-40} transitionDuration={900} rimGlint className="st-glare">
-                <LiveDesk />
+            <p className="pi-lead st-rv">Alveo uses your webcam to count puffs taken at your desk, and turns each one from a reflex back into a choice. That's what being in control feels like again.</p>
+            {/* the real Mac app (RJ's screenshot): the card that pops up after a puff */}
+            <div className="st-mock st-rv">
+              <GlareHover width="100%" borderRadius="18px" glareColor="#ffffff" glareOpacity={0.18} glareSize={40} glareAngle={-40} transitionDuration={900} rimGlint className="st-glare">
+                <img className="st-shot" src={alertCard} width="1042" height="450" loading="lazy" decoding="async"
+                  alt="Alveo on a Mac, right after a puff: 'Did you just vape?' 11 of 54 puffs today, 43 left, with Yes, Not a vape and Start urge timer buttons." />
               </GlareHover>
             </div>
-            <ul className="pi-points st-rv">
-              <li><b>Counts every puff</b><span>Today's count against today's limit, always in view.</span></li>
-              <li><b>Steps your limit down</b><span>Pick a pace; the plan runs about 90 days. A zero-puff goal is offered at the end, never forced.</span></li>
-              <li><b>Nothing leaves your computer</b><span>Camera frames are never uploaded, and it keeps counting offline.</span></li>
-            </ul>
-            <p className="pi-fine st-rv">It counts what it can see: puffs at your desk, in front of the camera.</p>
+            <p className="st-private st-rv"><i aria-hidden="true" />Counted on your device. Your camera is never streamed or watched.</p>
           </div>
         </section>
 
@@ -227,14 +225,14 @@ export default function App() {
         <section className="st-chapter st-final" id="download" aria-label="Download Alveo">
           <p className="pi-eyebrow st-rv"><span className="pi-eyebrow__n">03</span>Download</p>
           <h2 className="pi-title st-h2 st-rv">See your number.<br />Then lower it.</h2>
-          <p className="pi-lead st-rv">Alveo is in beta for Mac and Windows. Download it, allow the camera, and it starts counting.</p>
+          <p className="pi-lead st-rv">Alveo is in beta for Mac and Windows. Download it, allow the camera, and it starts the accountability cycle.</p>
           <SpotlightCard className="st-finalcard st-rv" spotlightColor="rgba(255, 58, 51, 0.28)" intensity={0.45} spotlightSize={380} borderGlow={0.8} grain={0.04}>
             <div className="st-ctas">
               <Download os={os} />
               <Download os={other(os)} size="ghost" />
             </div>
           </SpotlightCard>
-          <p className="st-trust st-rv">18+ · Not a medical device · Camera frames never leave your computer</p>
+          <p className="st-trust st-rv">18+ · Not a medical device · Counted on your device</p>
           <footer className="st-foot">
             <span className="wordmark">ALVEO<span>.</span></span>
             <span>© 2026 Alveo</span>

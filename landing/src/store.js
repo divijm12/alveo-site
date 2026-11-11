@@ -28,4 +28,5 @@ export function useStore(sel = s => s) { return useSyncExternalStore(store.subsc
 //   open: 0..1, how far the landing has scrolled away = how much of the vape cloud has rolled in
 //   heal: 0..1, where the scroll is in the solution chapter (store.heal follows it, eased)
 //   story: 0..1, where the scroll is between the candy screen and the end of the problem: the breath + the poison
-export const live = { open: 0, heal: 0, story: 0 };
+//   calm: 0..1, how far into Download: the healthy lungs breathe (scene/breath.js)
+export const live = { open: 0, heal: 0, story: 0, calm: 0 };
