@@ -18,7 +18,6 @@ import Markers from "./Markers.jsx";
 import { LungSim } from "../sim/LungSim.js";
 import { store, live } from "../store.js";
 import Callouts from "./Callouts.jsx";
-import Air from "./Air.jsx";
 
 const FOV = 35;
 const RELEASE = 2.9;                 // s into the breath when the puff goes down the windpipe
@@ -186,7 +185,6 @@ function Director() {
       <Smoke I={I} />
       <Streams I={I} />
       <Markers simRef={simRef} />
-      <Air />
       <Callouts />
     </group>
   );
