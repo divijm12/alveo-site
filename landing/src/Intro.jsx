@@ -74,7 +74,7 @@ export default function Intro() {
       </div>
       <div className="intro-foot">
         <p className="intro-note">Each chemical named here has been measured in e-cigarette aerosol in published studies. Amounts vary by device and liquid.</p>
-        <a className="intro-cue cursor-target" tabIndex={-1} href="#hero" onClick={e => { e.preventDefault(); scrollToId("hero"); }}><span>Scroll to breathe in</span><i /></a>
+        <a className="intro-cue cursor-target" tabIndex={-1} href="#problem" onClick={e => { e.preventDefault(); scrollToId("problem"); }}><span>Scroll to breathe in</span><i /></a>
       </div>
     </div>
   );

@@ -40,11 +40,6 @@
 
 /* ---------- story column ---------- */
 .st-col { position: relative; z-index: 1; width: min(620px, 43vw); margin-left: clamp(40px, 7.5vw, 132px); }
-.st-hero { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: 96px 0 80px; position: relative; }
-.st-eyebrow { display: inline-flex; align-items: center; gap: 10px; align-self: flex-start; margin: 0 0 26px; padding: 7px 14px 7px 12px; border-radius: 999px;
-  border: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.03); font-size: .76rem; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2); }
-.st-eyebrow i { width: 7px; height: 7px; border-radius: 50%; background: var(--red); box-shadow: 0 0 10px var(--red); }
-.st-h1 { margin: 0; font-family: var(--display); font-weight: 300; font-size: clamp(2.9rem, 4.25vw, 4.9rem); line-height: 1.02; letter-spacing: -.04em; color: var(--ink); }
 .st-lead { margin: 28px 0 0; max-width: 31em; font-size: clamp(1.05rem, 1.25vw, 1.2rem); line-height: 1.6; color: var(--ink-2); }
 .st-ctas { display: flex; align-items: center; gap: 22px; margin-top: 38px; flex-wrap: wrap; }
 .st-alt { color: var(--ink-2); font-size: .92rem; text-decoration: underline; text-decoration-color: rgba(255,255,255,.25); text-underline-offset: 4px; }
@@ -68,19 +63,6 @@
 .st-block { padding: 16vh 0 6vh; }
 .st-block:first-child { padding-top: 22vh; }
 .st-mock { margin-top: 40px; }
-.st-panel { margin-top: 36px; }
-.st-panel .pi-panel__detail { margin: 18px 0 0; }
-.st-midcta { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin: 10vh 0 2vh; padding: 22px 22px 22px 28px; border-radius: 22px;
-  border: 1px solid rgba(255,58,51,.28); background: linear-gradient(120deg, rgba(255,45,45,.12), rgba(255,45,45,.02) 60%), rgba(12,12,14,.86); }
-.st-midcta > div > b { display: block; font-family: var(--display); font-weight: 300; font-size: 1.5rem; letter-spacing: -.01em; color: var(--ink); }
-.st-midcta > div > span { display: block; margin-top: 4px; font-size: .82rem; color: var(--ink-2); }
-.st-tones { margin-top: 34px; display: grid; gap: 0; }
-.st-tones__h { margin: 0 0 10px; font-size: .74rem; letter-spacing: .18em; text-transform: uppercase; color: var(--ink-3); }
-.st-tone { display: grid; grid-template-columns: 86px 1fr auto; align-items: center; gap: 16px; padding: 14px 0; border-top: 1px solid var(--line); }
-.st-tone:last-child { border-bottom: 1px solid var(--line); }
-.st-tone .pi-chip { justify-self: start; }
-.st-tone q { color: var(--ink); font-size: .98rem; line-height: 1.45; quotes: "“" "”"; }
-.st-tone em { font-style: normal; font-size: .68rem; letter-spacing: .14em; text-transform: uppercase; color: var(--red-hi); }
 
 .st-final { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: 18vh 0 0; }
 .st-final .st-h2 { font-size: clamp(2.8rem, 4.8vw, 4.9rem); }
@@ -96,16 +78,15 @@
   text-shadow: 0 0 22px rgba(166, 209, 58, .35); min-width: 2.2em; text-align: right; }
 .cap-marks > span { font-size: .66rem; line-height: 1.35; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-3); text-align: left; }
 .cap-heal { margin: 0; font-size: .8rem; line-height: 1.5; color: #8a8a93; }
-.stage-cap.is-intro[data-phase="done"] .cap-hint, .stage-cap.is-hero[data-phase="done"] .cap-hint, .stage-cap.is-problem[data-phase="done"] .cap-hint,
+.stage-cap.is-intro[data-phase="done"] .cap-hint, .stage-cap.is-problem[data-phase="done"] .cap-hint,
 .stage-cap.is-intro[data-phase="running"] .cap-marks, .stage-cap.is-intro[data-phase="done"] .cap-marks,
-.stage-cap.is-hero:not([data-phase="idle"]) .cap-marks,
 .stage-cap.is-problem:not([data-phase="idle"]) .cap-marks,
 .stage-cap.is-solution .cap-heal { opacity: 1; transform: none; }
 .replay { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 14px; border-radius: 999px; font: inherit; font-size: .78rem;
   color: var(--ink-2); background: rgba(10,10,12,.5); border: 1px solid #2a2a2f; cursor: pointer; }
 .replay:hover { color: var(--ink); border-color: #45454c; }
 .replay svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-.stage-cap[data-phase="done"].is-intro .replay, .stage-cap[data-phase="done"].is-hero .replay, .stage-cap[data-phase="done"].is-problem .replay { opacity: 1; transform: none; pointer-events: auto; }
+.stage-cap[data-phase="done"].is-intro .replay, .stage-cap[data-phase="done"].is-problem .replay { opacity: 1; transform: none; pointer-events: auto; }
 
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 @media (prefers-reduced-motion: reduce) {
@@ -114,22 +95,18 @@
 }
 
 /* ---------- React Bits pieces, styled to the page ---------- */
-.st-h1-line { display: flex; flex-wrap: wrap; }
-.st-h1-line--2 { min-height: 1.02em; color: #a9a9b2; }
-.st-eyebrow .shiny-text { letter-spacing: inherit; }
 .st .st-sr { margin: 0; }                                   /* ScrollReveal headings take the page type, not the demo's */
 .st .st-sr .scroll-reveal-text { font: inherit; line-height: 1.04; letter-spacing: inherit; }
 .st-beat .st-sr { max-width: 11.5em; }
 .dl-wrap { display: inline-block; }
 .nav-dl.dl-wrap { justify-self: end; }
 .st-glare { display: block; }
-.st-midcta.spotlight-card, .st-finalcard.spotlight-card { border-radius: 22px; }
+.st-finalcard.spotlight-card { border-radius: 22px; }
 .st-finalcard { margin-top: 34px; padding: 26px 28px; border-radius: 24px; align-self: flex-start; }
 .st-finalcard .st-ctas { margin-top: 0; }
 .nav::before { opacity: .55; }                              /* GradualBlur does most of the work now */
 .st-glare.glare-hover { display: grid; place-items: stretch; }
 /* keep card content above the spotlight layers */
-.st-midcta > :not([class^="spotlight-card__"]), .st-finalcard > :not([class^="spotlight-card__"]) { position: relative; z-index: 3; }
 
 /* ---------- shorter story (the punchlines live on the stage now) ---------- */
 .st-beat { min-height: 57vh; }
@@ -137,10 +114,8 @@
 .st-beat--quiet { min-height: 52vh; }
 .st-block { padding: 9vh 0 3vh; }
 .st-block:first-child { padding-top: 12vh; }
-.st-midcta { margin: 6vh 0 0; }
 .st-final { min-height: 86vh; padding-top: 10vh; }
 .st-foot { padding: 9vh 0 28px; }
-.st-lead-xl { margin-top: 0; font-size: clamp(1.25rem, 1.65vw, 1.6rem); line-height: 1.45; color: var(--ink); max-width: 24em; }
 
 /* ---------- words under the lungs (right side), focus-in / blur-out crossfade ---------- */
 .stage-words { position: absolute; left: 50%; right: 0; bottom: 10.5vh; display: grid; place-items: center; padding: 0 3vw;

@@ -99,7 +99,7 @@ function Director() {
     if (store.get().reducedMotion) I.open = 1; else gsap.to(I, { open: 1, duration: 3.4, ease: "expo.out" });
     // the reader got ahead of the loading: catch the story up
     const ch = store.get().chapter;
-    if (ch === "hero" || ch === "problem") actions.fire(); else if (ch === "solution" || ch === "download") actions.skipToEnd();
+    if (ch === "problem") actions.fire(); else if (ch === "solution" || ch === "download") actions.skipToEnd();
   }
   const simRef = useRef(null), dock = useRef({ dock: 0 });
   // animated proxies (GSAP writes, useFrame reads)

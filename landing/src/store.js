@@ -2,7 +2,7 @@
 import { useSyncExternalStore } from "react";
 const state = {
   phase: "loading",   // loading | idle (the cloud in the sky) | inhaling | running (poison spreads) | done
-  chapter: "intro",   // intro | hero | problem | solution | download (what the story column shows)
+  chapter: "intro",   // intro | problem | solution | download (what the story column shows)
   destroyed: 0,       // dots destroyed so far
   total: 212,
   findings: false,   // the five chemical markers are placed on the poisoned lungs
