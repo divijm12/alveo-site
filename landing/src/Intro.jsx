@@ -9,7 +9,7 @@ import gsap from "gsap";
 import { store, useStore } from "./store.js";
 import { CHEMS, formula } from "./chems.js";
 import { cloudURL } from "./cloudTex.js";
-import { scrollToId } from "./smooth.js";
+import { step } from "./story.js";
 
 const chars = (text, cls = "") => [...text].map((c, i) => <span key={i} className={"ch " + cls}>{c === " " ? " " : c}</span>);
 
@@ -87,7 +87,7 @@ export default function Intro() {
       </div>
       <div className="intro-foot">
         <p className="intro-note">Floating in it: chemicals measured in vape (e-cigarette) aerosol in published studies. Amounts vary by device and liquid.</p>
-        <a className="breathe-cue intro-cue cursor-target" tabIndex={-1} href="#problem" onClick={e => { e.preventDefault(); scrollToId("problem"); }}><span>Scroll to inhale</span><i /></a>
+        <a className="breathe-cue intro-cue cursor-target" tabIndex={-1} href="#problem" onClick={e => { e.preventDefault(); step(1); }}><span>Scroll to inhale</span><i /></a>
       </div>
     </div>
   );

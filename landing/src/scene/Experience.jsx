@@ -184,7 +184,8 @@ function Director() {
     I.open = store.get().reducedMotion ? live.open : I.open + (live.open - I.open) * Math.min(1, dt * 2.4);
     const { heal, phase } = store.get();
     // reader already reached the healing part while the poison still spreads: fast-forward to the end
-    if (sim) sim.update(heal > 0.001 && phase === "running" ? dt * 5 : dt);
+    // (pushing against the gate before the solution: faster, but you still see it finish)
+    if (sim) sim.update(phase === "running" ? dt * (heal > 0.001 ? 5 : live.hurry ? 2.4 : 1) : dt);
     // camera: shot + pointer parallax + shake
     const p = pointer.current; p.sx += (p.x - p.sx) * Math.min(1, dt * 3); p.sy += (p.y - p.sy) * Math.min(1, dt * 3);
     shake.amp *= Math.exp(-dt * 5);

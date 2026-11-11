@@ -13,7 +13,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useStore, store, actions, live } from "./store.js";
 import { DOWNLOADS } from "./config.js";
-import { scrollToId } from "./smooth.js";
+import { startStory, replayFromTop } from "./story.js";
 import { DeskMock } from "./sections/ProductIntro.jsx";
 import ScrollReveal from "./bits/ScrollReveal.jsx";
 import Magnet from "./bits/Magnet.jsx";
@@ -93,7 +93,7 @@ export default function App() {
       // the next scroll breathes the cloud in; back above it, it breathes out again (and the lungs are clean)
       ScrollTrigger.create({ trigger: "#intro", start: "top top-=12%", onEnter: () => actions.fire(), onLeaveBack: () => actions.replay() });
       // 02: the lungs relight across the solution chapter (jumped straight here? resolve the game first)
-      const heal = s => store.set({ heal: s.progress });
+      const heal = s => { live.heal = s.progress; };
       ScrollTrigger.create({
         trigger: "#solution", start: "top 65%", end: "bottom 70%",
         onEnter: () => { if (store.get().phase === "idle") actions.skipToEnd(); },
@@ -111,7 +111,16 @@ export default function App() {
       mm.add("(prefers-reduced-motion: reduce)", () => store.set({ deskCount: 51 }));
     }, root);
     document.fonts?.ready.then(() => ScrollTrigger.refresh());
-    return () => ctx.revert();
+    // the lungs heal with the scroll, but at a limited speed: a fast flick through the solution still shows it
+    const healTick = (time, dms) => {
+      const h = store.get().heal, tgt = live.heal; if (h === tgt) return;
+      const k = Math.min(dms, 50) / 1000 * 0.42;                // full heal takes at least ~2.4 s
+      const nh = store.get().reducedMotion ? tgt : h < tgt ? Math.min(tgt, h + k) : Math.max(tgt, h - k * 1.5);
+      store.set({ heal: nh });
+    };
+    gsap.ticker.add(healTick);
+    const stopStory = startStory();
+    return () => { ctx.revert(); gsap.ticker.remove(healTick); stopStory(); };
   }, []);
 
   const rise = lines => lines.map((l, i) => <span className="pi-mask" key={i}><span className="pi-rise">{l}</span></span>);
@@ -167,7 +176,7 @@ export default function App() {
           </div>
           <p className="cap-hint">Hover the markers: what the vape left in these lungs.</p>
           <p className="cap-heal">The poison washes out as you read. In the app, the lung picture tracks your week: an illustration, not a measurement.</p>
-          <button className="replay cursor-target" type="button" tabIndex={-1} onClick={() => scrollToId("intro")}>
+          <button className="replay cursor-target" type="button" tabIndex={-1} onClick={replayFromTop}>
             <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8a5.5 5.5 0 1 0 1.7-4" /><path d="M2.5 2.5v3h3" /></svg>Replay</button>
         </div>
       </div>

@@ -29,6 +29,14 @@ Download button is in the nav the whole time.
    The poison washes out patch by patch as you read (if you got here early, the puff fast-forwards first).
 3. **03 Download**: both platforms, beside healthy, breathing lungs.
 
+**Fast scrolling skips nothing** (`src/story.js`, RJ 2026-11-11): the opening is stepped (one gesture = landing ->
+candy screen -> the breath, input held while each plays; the page glides to the problem as the camera reaches the
+lungs). The reader can't leave the problem until the poison is done + 1.8 s (pushing speeds the poison up, x2.4,
+instead of skipping it). One gesture can't cross a section: stops at the solution's top, its three points and the
+download, both ways. A fast flick's trailing wheel events are swallowed until they pause (220 ms). The lungs heal
+at a limited speed (store.heal eases toward the scroll, >= ~2.4 s). Nav links / Home / End jump freely (the story
+catches up). `node tools/fastscroll.mjs` flicks hard through the page and logs each stop.
+
 Download URLs live in `src/config.js` (empty for now: buttons then jump to the Download section).
 
 Separate from the live coming-soon page (`../index.html`), which is unchanged.
@@ -41,6 +49,7 @@ npm run dots       # re-read ../logo.svg -> src/data/lung.json (212 dots + physi
 npm run sim-test   # headless check of the poison spread: 8 seeded puffs, damage + length
 node tools/shoot.mjs name 1440 900 --fire --at=2,5,12   # screenshots in shots/ (real Chrome); --fire = scroll a little (the breath)
 node tools/sections.mjs                                 # height of each section, in screens
+node tools/fastscroll.mjs                               # hard flicks down and up: where the page stops
 node tools/breath.mjs name 0.3 12                       # the breath frame by frame (page clock faked: exact times)
 python tools/sheet.py out.png a.png b.png ...           # contact sheet of screenshots
 ```
