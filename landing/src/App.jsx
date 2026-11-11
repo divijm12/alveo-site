@@ -1,6 +1,8 @@
 // The page: one scroll story beside a live 3D stage (fixed, framed on the right).
-//   Intro: "Tastes like candy. Breathes like lead." in a dark cloud full of what vapes really put out; the first
-//          scroll breathes it all in, down the windpipe, and the poison starts.
+//   Landing: the ALVEO. wordmark, "See what one vape puff does.", a big "Scroll to breathe in".
+//   Intro: scrolling off the landing rolls a vape cloud in: "Tastes like candy. Breathes like lead.", full of what
+//          vapes really put out; the next scroll breathes it all in, down the windpipe, and the poison starts.
+//          Labels on the 3D say what it is ("Vape aerosol" on the windpipe, "Your lungs").
 //   01 Problem: the poison finishes its work while the problem is told (two short beats).
 //   02 Solution: what Alveo is and does (count, step the limit down, private); the poison washes out as you read.
 //   03 Download: the ask, beside healthy, breathing lungs.
@@ -9,7 +11,7 @@
 import { Suspense, lazy, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { useStore, store, actions } from "./store.js";
+import { useStore, store, actions, live } from "./store.js";
 import { DOWNLOADS } from "./config.js";
 import { scrollToId } from "./smooth.js";
 import { DeskMock } from "./sections/ProductIntro.jsx";
@@ -19,7 +21,9 @@ import SpotlightCard from "./bits/SpotlightCard.jsx";
 import GlareHover from "./bits/GlareHover.jsx";
 import GradualBlur from "./bits/GradualBlur.jsx";
 import TargetCursor from "./bits/TargetCursor.jsx";
+import Landing from "./Landing.jsx";
 import Intro from "./Intro.jsx";
+import Labels from "./Labels.jsx";
 import Findings from "./Findings.jsx";
 import "./sections/sections.css";
 import "./story.css";
@@ -77,12 +81,17 @@ export default function App() {
   useLayoutEffect(() => {
     const ctx = gsap.context(() => {
       // which chapter is on screen (nav highlight + stage caption)
-      ["intro", "problem", "solution", "download"].forEach(id => ScrollTrigger.create({
+      ["landing", "intro", "problem", "solution", "download"].forEach(id => ScrollTrigger.create({
         trigger: `#${id}`, start: "top 55%", end: "bottom 55%",
         onToggle: s => s.isActive && store.set({ chapter: id }),
       }));
-      // the first scroll breathes the cloud in; back at the very top it breathes out again (and the lungs are clean)
-      ScrollTrigger.create({ trigger: "#intro", start: "top top-=40", onEnter: () => actions.fire(), onLeaveBack: () => actions.replay() });
+      // scrolling off the landing: the wordmark fades up and away while the vape cloud rolls in
+      const roll = s => { live.open = Math.min(1, s.progress / 0.7); };
+      ScrollTrigger.create({ trigger: "#landing", start: "top top", end: "bottom top", onUpdate: roll, onRefresh: roll });
+      gsap.fromTo(".landing-in, .landing-cue", { autoAlpha: 1, y: 0, filter: "blur(0px)" }, { autoAlpha: 0, y: -50, filter: "blur(10px)", ease: "none", immediateRender: false,
+        scrollTrigger: { trigger: "#landing", start: "top top", end: "45% top", scrub: true } });
+      // the next scroll breathes the cloud in; back above it, it breathes out again (and the lungs are clean)
+      ScrollTrigger.create({ trigger: "#intro", start: "top top-=12%", onEnter: () => actions.fire(), onLeaveBack: () => actions.replay() });
       // 02: the lungs relight across the solution chapter (jumped straight here? resolve the game first)
       const heal = s => store.set({ heal: s.progress });
       ScrollTrigger.create({
@@ -126,8 +135,8 @@ export default function App() {
       </div>
 
       <GradualBlur target="page" position="top" height="6.5rem" strength={2} layers={3} curve="bezier" zIndex={25} />
-      <header className="nav">
-        <a className="wordmark cursor-target" href="#intro" aria-label="Alveo, back to top">ALVEO<span>.</span></a>
+      <header className={"nav" + (chapter === "landing" ? " is-landing" : "")}>
+        <a className="wordmark cursor-target" href="#landing" aria-label="Alveo, back to top">ALVEO<span>.</span></a>
         <nav className="nav-links" aria-label="Sections">
           <a href="#problem" className={"cursor-target" + (chapter === "problem" ? " on" : "")}>The problem</a>
           <a href="#solution" className={"cursor-target" + (chapter === "solution" ? " on" : "")}>How it helps</a>
@@ -143,7 +152,9 @@ export default function App() {
 
       {/* stage overlay: the opening words + chemicals; the punchline under the lungs; caption + replay top right */}
       <div className="stage-ui">
+        <Landing />
         <Intro />
+        <Labels />
         <Findings />
         <div className="stage-words" aria-hidden="true">
           <p className={words === "mark" ? "on" : ""}>Every puff <em>leaves a mark.</em></p>
@@ -152,9 +163,9 @@ export default function App() {
         <div className={`stage-cap is-${chapter}`} data-phase={phase} aria-hidden="true">
           <div className="cap-marks">
             <Marks />
-            <span>marks<br />left behind</span>
+            <span>marks from<br />one vape puff</span>
           </div>
-          <p className="cap-hint">Hover the markers: what you just breathed in.</p>
+          <p className="cap-hint">Hover the markers: what the vape left in these lungs.</p>
           <p className="cap-heal">The poison washes out as you read. In the app, the lung picture tracks your week: an illustration, not a measurement.</p>
           <button className="replay cursor-target" type="button" tabIndex={-1} onClick={() => scrollToId("intro")}>
             <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8a5.5 5.5 0 1 0 1.7-4" /><path d="M2.5 2.5v3h3" /></svg>Replay</button>
@@ -162,15 +173,16 @@ export default function App() {
       </div>
 
       <main className="st-col">
-        {/* ---------------- intro (the words float on the stage; this is the scroll room for the breath) ---------------- */}
-        <section className="st-intro" id="intro"><h1 className="sr">Tastes like candy. Breathes like lead.</h1></section>
+        {/* ---------------- landing + intro (both drawn on the stage; these are their scroll room) ---------------- */}
+        <section className="st-intro" id="landing"><h1 className="sr">Alveo. See what one vape puff does.</h1></section>
+        <section className="st-intro" id="intro"><h2 className="sr">One vape puff, up close: tastes like candy, breathes like lead.</h2></section>
 
         {/* ---------------- 01 the problem (the opening breath is its hook; the poison spreads alongside) ---------------- */}
         <section className="st-chapter" id="problem" aria-label="The problem">
           <div className="st-beat">
             <p className="pi-eyebrow"><span className="pi-eyebrow__n">01</span>The problem</p>
             <ScrollReveal {...reveal}>One puff takes two seconds.</ScrollReveal>
-            <p className="pi-lead st-rv">Hit, exhale, back to the screen. At your desk it's always in reach, so the puffs add up quietly, all day, and nobody counts them.</p>
+            <p className="pi-lead st-rv">Hit the vape, exhale, back to the screen. At your desk it's always in reach, so the puffs add up quietly, all day, and nobody counts them.</p>
           </div>
           <div className="st-beat">
             <ScrollReveal {...reveal}>You can't cut what you can't see.</ScrollReveal>

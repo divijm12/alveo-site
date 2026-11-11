@@ -3,15 +3,21 @@
 One scroll story beside a live 3D stage (fixed, framed on the right; the story is a column on the left). The
 Download button is in the nav the whole time.
 
-0. **Opening**: full screen, no story column. "Tastes like candy. Breathes like lead." sits in dense 3D vape smoke
+0. **Landing** (`src/Landing.jsx`, RJ 2026-11-10): the big ALVEO. wordmark, "See what one vape puff does." and a large
+   breathing "Scroll to breathe in" pill. Scrolling it away fades the wordmark up into a vape cloud that rolls in
+   with the scroll (`live.open` in store.js, eased in the scene).
+   **Candy screen**: "One vape puff, up close" over "Tastes like candy. Breathes like lead." (candy in the brand red),
+   in dense 3D vape smoke
    (the same kind as the getalveo.app beta: soft noise sprites rising and curling, all one grey (no red patches,
    RJ 2026-11-10), pushed aside by the cursor; thick, in depth, a bit thinner over the words), with chemical labels hanging in it
    (lead, formaldehyde, nicotine, nickel, acrolein, diacetyl, chromium, benzene, propylene glycol: all measured in
    e-cigarette aerosol in published studies, sources in `src/chems.js`; a note under the headline says amounts vary).
-   **The first scroll is the breath**, like drawing air through pursed lips: the words come apart, the smoke speeds
+   **The next scroll is the breath**, like drawing air through pursed lips: the words come apart, the smoke speeds
    up toward the windpipe's mouth, stretches along the flow and closes into a narrow funnel, thinning right out
    before it gets there; only faint grey strands go into the mouth (the green starts inside). The chemicals ride the
-   same vortex, the camera follows, and the poison starts. When it has done its work, **five markers appear on
+   same vortex, the camera follows, and the poison starts. Labels on the 3D say what it is: "Vape aerosol" on the
+   windpipe while the puff goes down, then "Your lungs" (`src/Labels.jsx` + `scene/Callouts.jsx`); the counter reads
+   "marks from one vape puff". When it has done its work, **five markers appear on
    the dead tissue** (nicotine, formaldehyde, acrolein, lead, nickel): hover / tap / focus one for its IUPAC name
    and one line (`FINDINGS` in `src/chems.js`). Back at the very top,
    the cloud breathes back out and the lungs are clean again (that's also what "Replay" does).

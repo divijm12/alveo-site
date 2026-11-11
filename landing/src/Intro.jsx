@@ -1,9 +1,10 @@
-// The opening screen, over the 3D sky: the headline floats in the cloud (mist wisps drift in front of and behind
-// it, cut from the same procedural puffs as the 3D clouds), with the chemicals that are really in the aerosol
-// hanging in the smoke (the 3D scene positions those labels every frame, see scene/Smoke.jsx).
+// The second screen (after the landing), over the 3D sky: one vape puff, up close. The headline floats in the
+// cloud (mist wisps drift in front of and behind it, cut from the same procedural puffs as the 3D clouds), with
+// the chemicals that are really in vape aerosol hanging in the smoke (the 3D scene positions those labels every
+// frame, see scene/Smoke.jsx). The words come into focus when you scroll off the landing.
 // When the breath starts (phase leaves "idle") the words come apart into the haze and the mist is drawn down
 // after the cloud; on replay they gather again.
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
 import { store, useStore } from "./store.js";
 import { CHEMS, formula } from "./chems.js";
@@ -16,6 +17,7 @@ export default function Intro() {
   const root = useRef();
   const chapter = useStore(s => s.chapter);
   const gone = useStore(s => s.phase === "inhaling" || s.phase === "running" || s.phase === "done");
+  const arrived = useStore(s => s.chapter !== "landing");      // scrolled off the landing
 
   // mist texture: made by a worker, then the wisps fade in
   useEffect(() => {
@@ -24,15 +26,25 @@ export default function Intro() {
     return () => { alive = false; };
   }, []);
 
-  // the words come into focus out of the haze
-  useEffect(() => {
-    if (store.get().reducedMotion) return;
-    const ctx = gsap.context(() => {
-      gsap.from(".intro-head .ch", { opacity: 0, filter: "blur(18px)", y: 18, duration: 1.8, ease: "expo.out", stagger: { each: 0.035, from: "random" }, delay: 0.15 });
-      gsap.from(".intro-foot > *", { opacity: 0, y: 10, duration: 1.4, ease: "expo.out", stagger: 0.12, delay: 1.4 });
-    }, root);
-    return () => ctx.revert();
+  // the words come into focus out of the haze as you arrive from the landing (and blur away if you go back up)
+  useLayoutEffect(() => {
+    if (!arrived) gsap.set(root.current.querySelectorAll(".intro-head .ch, .intro-eyebrow, .intro-foot > *"), { opacity: 0 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  const firstArrive = useRef(true);
+  useEffect(() => {
+    if (firstArrive.current) { firstArrive.current = false; if (!arrived) return; }
+    if (gone) return;
+    const still = store.get().reducedMotion;
+    const q = s => root.current.querySelectorAll(s);
+    if (arrived) {
+      gsap.fromTo(q(".intro-head .ch"), { opacity: 0, filter: "blur(18px)", y: 18 }, { opacity: 1, filter: "blur(0px)", y: 0, x: 0, scale: 1, overwrite: true,
+        duration: still ? 0 : 1.6, ease: "expo.out", stagger: still ? 0 : { each: 0.03, from: "random" }, delay: still ? 0 : 0.1 });
+      gsap.fromTo(q(".intro-eyebrow, .intro-foot > *"), { opacity: 0, y: 10 }, { opacity: 1, y: 0, overwrite: true, duration: still ? 0 : 1.2, ease: "expo.out", stagger: 0.1, delay: still ? 0 : 0.7 });
+    } else {
+      gsap.to(q(".intro-head .ch, .intro-eyebrow, .intro-foot > *"), { opacity: 0, duration: still ? 0 : 0.5, overwrite: true });
+    }
+  }, [arrived]);
 
   // breathe in: the words come apart and sink after the cloud; replay gathers them again
   const first = useRef(true);
@@ -46,12 +58,12 @@ export default function Intro() {
         x: (i, el) => { const r = el.getBoundingClientRect(); return (cx - (r.left + r.width / 2)) * 0.22; },
         y: () => 40 + Math.random() * 70, duration: still ? 0 : 1.5, ease: "power2.in", stagger: still ? 0 : { each: 0.022, from: "random" } });
       gsap.to(q(".wisp"), { y: "22vh", scale: 0.35, opacity: 0, duration: still ? 0 : 2.2, ease: "power2.in", overwrite: true, stagger: 0.1 });
-      gsap.to(q(".intro-foot > *"), { opacity: 0, duration: still ? 0 : 0.5, overwrite: true });
+      gsap.to(q(".intro-foot > *, .intro-eyebrow"), { opacity: 0, duration: still ? 0 : 0.5, overwrite: true });
     } else {
       gsap.to(q(".intro-head .ch"), { opacity: 1, filter: "blur(0px)", scale: 1, x: 0, y: 0, overwrite: true,
         duration: still ? 0 : 1.8, ease: "expo.out", delay: still ? 0 : 0.9, stagger: still ? 0 : { each: 0.03, from: "random" } });
       gsap.to(q(".wisp"), { y: 0, scale: 1, opacity: 1, duration: still ? 0 : 2.6, ease: "power3.out", delay: still ? 0 : 0.4, overwrite: true });
-      gsap.to(q(".intro-foot > *"), { opacity: 1, duration: still ? 0 : 1, delay: still ? 0 : 1.6, overwrite: true });
+      gsap.to(q(".intro-foot > *, .intro-eyebrow"), { opacity: 1, duration: still ? 0 : 1, delay: still ? 0 : 1.6, overwrite: true });
     }
   }, [gone]);
 
@@ -60,6 +72,7 @@ export default function Intro() {
       <div className="wisp wisp--4"><i /></div>
       <div className="wisp wisp--3"><i /></div>
       <div className="intro-head">
+        <p className="intro-eyebrow"><i />One vape puff, up close</p>
         <p className="intro-l1">{chars("Tastes like ")}<span className="w-candy">{chars("candy.", "ch--candy")}</span></p>
         <p className="intro-l2">{chars("Breathes like ")}<span className="w-lead">{chars("lead.", "ch--lead")}</span></p>
       </div>
@@ -73,8 +86,8 @@ export default function Intro() {
         ))}
       </div>
       <div className="intro-foot">
-        <p className="intro-note">Each chemical named here has been measured in e-cigarette aerosol in published studies. Amounts vary by device and liquid.</p>
-        <a className="intro-cue cursor-target" tabIndex={-1} href="#problem" onClick={e => { e.preventDefault(); scrollToId("problem"); }}><span>Scroll to breathe in</span><i /></a>
+        <p className="intro-note">Floating in it: chemicals measured in vape (e-cigarette) aerosol in published studies. Amounts vary by device and liquid.</p>
+        <a className="breathe-cue intro-cue cursor-target" tabIndex={-1} href="#problem" onClick={e => { e.preventDefault(); scrollToId("problem"); }}><span>Scroll to inhale</span><i /></a>
       </div>
     </div>
   );

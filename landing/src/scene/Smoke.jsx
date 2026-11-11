@@ -179,7 +179,7 @@ export default function Smoke({ I }) {
       const k = Math.min(1.3, 16 / dist) * (1 - 0.8 * e);
       const op = v.z < 1 ? (1 - sstep(0.55, 0.9, e)) * Math.min(1, 16 / dist) : 0;
       el.style.transform = `translate3d(${sx.toFixed(1)}px, ${sy.toFixed(1)}px, 0) scale(${k.toFixed(3)})`;
-      el.style.opacity = (op * (store.get().stageReady ? 1 : 0)).toFixed(3);
+      el.style.opacity = (op * (store.get().stageReady ? 1 : 0) * sstep(0.55, 1, open)).toFixed(3);   // only once the cloud is in
     }
   });
 

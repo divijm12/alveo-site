@@ -2,7 +2,7 @@
 import { useSyncExternalStore } from "react";
 const state = {
   phase: "loading",   // loading | idle (the cloud in the sky) | inhaling | running (poison spreads) | done
-  chapter: "intro",   // intro | problem | solution | download (what the story column shows)
+  chapter: "landing", // landing | intro | problem | solution | download (what the story column shows)
   destroyed: 0,       // dots destroyed so far
   total: 212,
   findings: false,   // the five chemical markers are placed on the poisoned lungs
@@ -26,3 +26,6 @@ store.subscribe(() => { snap = { ...state }; });
 export function useStore(sel = s => s) { return useSyncExternalStore(store.subscribe, () => sel(snap), () => sel(snap)); }
 // Imperative actions the scene registers (so DOM buttons can trigger them)
 export const actions = { fire: () => {}, replay: () => {}, skipToEnd: () => {} };
+// Values scroll writes and the scene reads every frame (no subscribers, no re-renders).
+//   open: 0..1, how far the landing has scrolled away = how much of the vape cloud has rolled in
+export const live = { open: 0 };
