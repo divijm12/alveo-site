@@ -76,7 +76,7 @@
   .soon .os:first-child .os-ico { margin-top: -.2em; }   /* the apple sits optically low */
   .trap { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
   form button:disabled { opacity: .6; cursor: default; }
-  .beta { opacity: 0; animation: rise .9s var(--ease) 2.1s forwards; font-size: .9rem; color: var(--ink-3); margin: 0; }
+  .beta { opacity: 0; animation: rise .9s var(--ease) 2.1s forwards; font-size: .9rem; color: var(--ink-3); margin: 0; text-wrap: balance; }
   .beta a { color: var(--ink); text-decoration: underline; text-decoration-color: rgba(255, 45, 45, .6);
     text-underline-offset: 3px; transition: text-decoration-color .2s; }
   .beta a:hover { text-decoration-color: #ff2d2d; }
@@ -121,7 +121,7 @@
     <button type="submit" id="notify-btn">Notify me</button>
   </form>
   <div class="note" id="note" role="status" aria-live="polite"></div>
-  <p class="beta">On a Mac in the US? <a href="https://beta.getalveo.app">Join the private beta <span class="arrow" aria-hidden="true">→</span></a></p>
+  <p class="beta">On a Mac or Windows PC in&nbsp;the&nbsp;US? <a href="https://beta.getalveo.app">Join the private beta <span class="arrow" aria-hidden="true">→</span></a></p>
   <div class="hint" id="hint">Press and hold anywhere to take a breath</div>
 </main>
 <footer>© 2026 Alveo<span class="sep" aria-hidden="true"> · </span><a href="#" class="cookies" onclick="window.alveoCookies&&alveoCookies();return false">Cookies</a></footer>
