@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Privacy Policy · Alveo</title>
+<meta name="description" content="How Alveo handles your information: the app, the private beta and getalveo.app.">
+<meta name="theme-color" content="#0a0a0b">
+<link rel="icon" type="image/png" href="favicon.png">
+<style>
+  @font-face { font-family: "Sora"; src: url("fonts/sora-300-latin.woff2") format("woff2"); font-weight: 300; font-display: swap; }
+  :root { color-scheme: dark; --bg: #0a0a0b; --card: #121214; --line: #26262b; --ink: #f4f4f5; --ink-2: #b4b4bc; --ink-3: #8e8e98; --red: #ff2d2d;
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink-2); font: 16px/1.65 var(--font); -webkit-font-smoothing: antialiased; }
+  main { max-width: 46rem; margin: 0 auto; padding-block: 48px 72px;
+    padding-left: max(20px, env(safe-area-inset-left)); padding-right: max(20px, env(safe-area-inset-right)); }
+  .wm { font: 300 22px/1 "Sora", var(--font); letter-spacing: .22em; color: var(--ink); text-decoration: none; }
+  .wm i { color: var(--red); font-style: normal; }
+  h1 { color: var(--ink); font-size: clamp(28px, 5vw, 36px); line-height: 1.15; margin: 36px 0 6px; letter-spacing: -.01em; }
+  .meta { color: var(--ink-3); font-size: 14px; margin: 0 0 28px; }
+  h2 { color: var(--ink); font-size: 20px; margin: 40px 0 10px; }
+  h3 { color: var(--ink); font-size: 16px; margin: 22px 0 6px; }
+  p, li { margin: 0 0 12px; }
+  ul { padding-left: 1.2em; margin: 0 0 14px; }
+  strong { color: var(--ink); }
+  a { color: var(--ink); text-decoration-color: rgba(255,45,45,.6); text-underline-offset: 3px; }
+  .summary { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px 22px; margin: 8px 0; }
+  .summary ul { margin: 0; }
+  .summary li { margin: 0 0 8px; }
+  .table { overflow-x: auto; margin: 0 0 14px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14.5px; min-width: 32rem; }
+  th, td { text-align: left; vertical-align: top; padding: 10px 10px 10px 0; border-bottom: 1px solid var(--line); }
+  th { color: var(--ink-3); font-weight: 500; font-size: 13px; }
+  td:first-child { color: var(--ink); }
+  code { font: 13.5px ui-monospace, Menlo, monospace; color: var(--ink); }
+  footer { margin-top: 48px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--ink-3); font-size: 14px; }
+</style>
+</head>
+<body>
+<main>
+<a class="wm" href="/">ALVEO<i>.</i></a>
+<h1>Privacy Policy</h1>
+<p class="meta">Effective November 13, 2026 · Applies to the Alveo app (Mac and Windows), the Alveo private beta, getalveo.app and beta.getalveo.app</p>
+
+<div class="summary">
+<p><strong>The short version</strong></p>
+<ul>
+  <li><strong>The camera stays on your computer.</strong> Alveo looks at your camera to notice when you vape at your desk. The video is checked on your computer and thrown away. It is never recorded or saved, and the public app never sends any of it anywhere. No one can watch your camera, ever, including us.</li>
+  <li><strong>Your puff history stays on your computer</strong>, in a folder you can delete at any time.</li>
+  <li><strong>Images are shared only during the private beta.</strong> Invited testers agree to share short mouth-area clips from alerts they answer, so we can train Alveo. The public version of Alveo never uploads any images or clips.</li>
+  <li><strong>We don't sell your information</strong>, we don't show ads, and we don't use your information for advertising.</li>
+</ul>
+</div>
+
+<h2>Who we are</h2>
+<p>"Alveo", "we" and "us" mean the team that makes the Alveo app and runs getalveo.app, based in Maryland, USA. You can reach us at <strong>privacy@getalveo.app</strong> for anything about your information, and at <strong>support@getalveo.app</strong> for help with the app.</p>
+
+<h2>1. The Alveo app (everyone)</h2>
+<h3>What the app does with your camera</h3>
+<p>While Alveo is running and not paused, it reads frames from your computer's camera and analyzes them on your computer to find your face, your hands, and whether a vape is at your lips. Frames are processed in memory and then discarded. They are not recorded or saved, and the public app never sends them, or any image, anywhere.</p>
+<p>When you lock your screen or step away, Alveo turns the camera off, and it comes back when you use your keyboard or mouse. You can pause it from the menu bar (Mac) or tray icon (Windows) at any time. Your computer's camera light is on whenever the camera is in use, and no app, including Alveo, can turn that light off.</p>
+<p>The face and hand positions Alveo finds are used in the moment to decide whether you are vaping. They are not used to recognize who you are, and the public app does not keep them.</p>
+
+<h3>What the app stores, and where</h3>
+<p>Everything below stays on your computer, in <code>~/Library/Application Support/Alveo/</code> on a Mac or <code>%LOCALAPPDATA%\Alveo\</code> on Windows. The public app does not send it to us.</p>
+<div class="table"><table>
+<tr><th>Information</th><th>Why</th></tr>
+<tr><td>The time of each puff Alveo detects</td><td>Your daily count, limit, trends and patterns</td></tr>
+<tr><td>Your answers to "Did you just vape?"</td><td>To correct the count, for example when you answer "Not a vape"</td></tr>
+<tr><td>Minutes your face was in view each day</td><td>The estimated daily total on your dashboard</td></tr>
+<tr><td>Urge-timer and check-in results</td><td>"Cravings ridden out" and when to offer an urge timer</td></tr>
+<tr><td>Your plan, tone, optional vape price and settings</td><td>To run your plan the way you set it up</td></tr>
+<tr><td>That you agreed to this policy and confirmed you are 18 or older</td><td>So we don't ask again every time</td></tr>
+<tr><td>A local log file</td><td>To troubleshoot problems on your computer</td></tr>
+</table></div>
+<p>You can delete all of it in the dashboard under Settings → Delete my data, or by deleting that folder. Uninstalling the app on a Mac does not delete the folder. The Windows uninstaller asks whether to delete it.</p>
+
+<h2>2. The Alveo private beta (invited testers only)</h2>
+<p>Everything in this section happens <strong>only in the private beta</strong>. It ends when the beta ends. The private beta is invite-only and is for adults 18 and older who live in the United States, <strong>except Illinois, Washington and Texas</strong>, where we don't offer it. Every tester agrees in person to help train Alveo before getting an invite, and agrees again in the app before the beta starts. Beta builds do these extra things:</p>
+
+<h3>Requesting access and your invite</h3>
+<p>If you ask to join on beta.getalveo.app, we store your name, email and the optional note you write, and email the Alveo admins to review it. If you're invited, we store your invite (your name, email and a personal access code) and email you the code.</p>
+
+<h3>Activation and staying active</h3>
+<p>The first time you open the beta, it checks your access code and ties your invite to that one computer using a one-way scrambled ID (a hash) of the computer's hardware ID. We cannot turn that ID back into your computer's hardware ID. We store the date you agreed to the beta terms and the date you activated.</p>
+<p>About once an hour while it runs, the beta checks with our server that your invite is still active, and reports the app's version and whether it runs on Mac or Windows. It also checks for updates and downloads them. When we revoke an invite, the app stops at its next check.</p>
+
+<h3>Clip sharing (training Alveo)</h3>
+<p>When you answer an alert ("Did you just vape?" or "Were you vaping?"), the beta uploads the roughly 3 seconds of small mouth-area images the app used to decide, together with your answer, the positions of your lips and hands in those images, the app version and the time.</p>
+<p><strong>Nothing else is uploaded:</strong> no full camera frames, nothing when you don't answer, no audio, no puff history, no screen contents.</p>
+<p>We use clips only to train and test Alveo's vape detector. Only one member of the Alveo team can open clips, to check what the detector saw and to correct a clip's training label if an answer was clearly wrong. Correcting a label changes only how the clip is used for training, never your answer, app or counts. Clips are deleted automatically after 6 months.</p>
+<p>A detector that has already been trained on clips can't "unlearn" them, but deleted clips are never used again.</p>
+
+<h3>Feedback reports</h3>
+<p>If you send feedback or a bug report from the app, we receive your message, the type of report, your app and operating-system versions, and your invite's name and email so we can reply. If you tick "Include diagnostic log", we also receive the last part of the app's log file (app messages and puff times, never camera images). Reports are deleted after 6 months.</p>
+
+<h3>Your choices in the beta</h3>
+<ul>
+  <li><strong>Delete my shared clips</strong> (Settings) deletes every clip you've shared and turns sharing off. The beta keeps working.</li>
+  <li><strong>Delete my data</strong> (Settings) deletes everything on your computer and your shared clips and feedback on our server.</li>
+  <li>Email <strong>privacy@getalveo.app</strong> to delete your invite and everything linked to it.</li>
+</ul>
+
+<h2>3. Our websites</h2>
+<h3>getalveo.app</h3>
+<p>If you join the launch waitlist, we store your email address, the date, and a short label for where you signed up. We use it only to tell you when Alveo launches and, rarely, about major Alveo news. Every email has an unsubscribe link.</p>
+<h3>Analytics on both sites</h3>
+<ul>
+  <li><strong>Cloudflare Web Analytics</strong> counts visits without cookies and without identifying you. We see totals only, such as page views, countries, the site that sent you and the type of device.</li>
+  <li><strong>Google Analytics</strong> runs only if you click Accept in the cookie banner. It then sets cookies to measure which pages people visit and how they found us. We don't use it for advertising. On the beta site we remove your access code from page addresses and keep names out of page titles before anything is measured. If you click Reject, Google Analytics never loads. You can change your choice any time with the "Cookies" link at the bottom of each page.</li>
+</ul>
+<p>Our hosting provider and your browser exchange the technical data any website needs, such as your IP address, to deliver pages.</p>
+
+<h2>4. Who else handles information for us</h2>
+<p>We use these service providers to run Alveo. They process information only to provide their service to us:</p>
+<div class="table"><table>
+<tr><th>Provider</th><th>What for</th></tr>
+<tr><td>Supabase (US)</td><td>Our database, file storage and server functions: waitlist, access requests, invites, beta check-ins, clips and feedback</td></tr>
+<tr><td>GitHub</td><td>Hosting our websites and delivering app downloads and updates</td></tr>
+<tr><td>Resend</td><td>Sending emails: invites, and notices to the Alveo admins</td></tr>
+<tr><td>Google</td><td>Google Analytics (only after you click Accept), and the inbox where emails to support@ and privacy@ arrive</td></tr>
+<tr><td>Cloudflare</td><td>Cookie-free visit counts</td></tr>
+<tr><td>Porkbun</td><td>Our domain, and forwarding emails sent to our addresses</td></tr>
+</table></div>
+<p>We don't sell your information, rent it, or share it for advertising. We may disclose information if the law requires it, to protect people's safety, or to defend against legal claims.</p>
+
+<h2>5. How long we keep information</h2>
+<div class="table"><table>
+<tr><th>Information</th><th>Kept until</th></tr>
+<tr><td>Everything in the app's folder on your computer</td><td>You delete it</td></tr>
+<tr><td>Beta clips</td><td>6 months after upload, or sooner if you delete them</td></tr>
+<tr><td>Feedback reports</td><td>6 months, or sooner with Delete my data</td></tr>
+<tr><td>Invites and access requests</td><td>The beta ends, or you ask us to delete them</td></tr>
+<tr><td>Waitlist emails</td><td>You unsubscribe or ask us to delete them</td></tr>
+<tr><td>Google Analytics data</td><td>No more than 14 months</td></tr>
+</table></div>
+
+<h2>6. Your rights</h2>
+<p>You can ask us to tell you what information we have about you, give you a copy, correct it, or delete it. You can also withdraw your consent to the beta or to analytics at any time, as described above. Email <strong>privacy@getalveo.app</strong>. We'll reply within 45 days, and we may need to confirm your email address first. If we turn down a request, you can ask us to reconsider it by replying to that email. We won't treat you differently for using these rights.</p>
+
+<h2>7. Security</h2>
+<p>We use encrypted connections, private storage that only our server functions can reach, access limited to the people who need it, and signed activation tokens. No system is completely secure, so we can't guarantee that information we hold will never be accessed without permission. If that happens, we'll tell affected people as the law requires.</p>
+
+<h2>8. Health information and age</h2>
+<p>Alveo is a habit-awareness tool, not a medical device. It doesn't diagnose, treat or cure any condition, and its lung pictures are illustrations, not measurements of your lungs. If you want help quitting, a free quitline (1-800-QUIT-NOW in the US) or your doctor can help.</p>
+<p>Alveo is for adults 18 and older. We don't knowingly collect information from anyone younger. If you think someone under 18 has given us information, email us and we'll delete it.</p>
+
+<h2>9. Changes to this policy</h2>
+<p>If we make a change that matters, we'll update this page and the date above. The app will show you the new version and ask you to agree before the camera starts again. We won't use information we already have in a materially different way without asking you first.</p>
+
+<footer>Questions: privacy@getalveo.app · <a href="/">getalveo.app</a></footer>
+</main>
+</body>
+</html>
