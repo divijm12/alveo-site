@@ -1,0 +1,293 @@
+/* Layout: a live 3D stage fixed behind everything (subject framed on the right), the story in a left column,
+   a nav with Download always visible. Desktop only. */
+.st { overflow-x: clip; }
+.stage-wrap { position: fixed; inset: 0; z-index: 0; background: #030304; }
+.stage-wrap canvas { display: block; }
+/* keeps the left column readable over the scene; the right stays clear for the lungs */
+.stage-shade { position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(90deg, rgba(3,3,4,.94) 0%, rgba(3,3,4,.86) 26%, rgba(3,3,4,.45) 42%, rgba(3,3,4,0) 54%); transition: opacity 1.6s var(--ease); }
+.stage-wrap.is-intro .stage-shade, .stage-wrap.is-landing .stage-shade { opacity: 0; }
+
+/* ---------- nav ---------- */
+.nav { position: fixed; top: 0; left: 0; right: 0; z-index: 30; height: 76px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+  padding: 0 clamp(24px, 3vw, 48px); pointer-events: none; }
+.nav::before { content: ""; position: absolute; inset: 0 0 -28px 0; pointer-events: none;
+  background: linear-gradient(rgba(3,3,4,.92) 0%, rgba(3,3,4,.7) 55%, rgba(3,3,4,0) 100%); }
+.nav > * { position: relative; pointer-events: auto; }
+.wordmark { font-family: var(--display); font-weight: 300; letter-spacing: .22em; font-size: 1.05rem; color: var(--ink); text-decoration: none; justify-self: start; }
+.wordmark span { color: var(--red); }
+.nav-links { display: flex; gap: 6px; padding: 5px; border-radius: 999px; border: 1px solid rgba(255,255,255,.08); background: rgba(14,14,17,.55);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.nav-links a { color: var(--ink-2); text-decoration: none; font-size: .82rem; letter-spacing: .02em; padding: 7px 14px; border-radius: 999px; transition: color .25s, background .25s; }
+.nav-links a:hover { color: var(--ink); }
+.nav-links a.on { color: var(--ink); background: rgba(255,255,255,.08); }
+.nav-dl { justify-self: end; }
+
+/* ---------- download buttons ---------- */
+.dl { display: inline-flex; align-items: center; gap: 10px; border-radius: 999px; text-decoration: none; white-space: nowrap; font-weight: 600; letter-spacing: .01em;
+  color: #fff; background: linear-gradient(180deg, #ff4a40 0%, #e0141f 100%); border: 1px solid rgba(255,120,110,.45);
+  box-shadow: 0 1px 0 rgba(255,255,255,.25) inset, 0 12px 36px -12px rgba(255,45,45,.75);
+  transition: transform .25s var(--ease), box-shadow .25s, filter .25s; }
+.dl svg { width: 1.05em; height: 1.05em; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.dl:hover { transform: translateY(-1px); filter: brightness(1.08); box-shadow: 0 1px 0 rgba(255,255,255,.25) inset, 0 18px 44px -12px rgba(255,45,45,.9); }
+.dl:active { transform: translateY(0); }
+.dl:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+.dl--lg { height: 54px; padding: 0 26px 0 22px; font-size: 1rem; }
+.dl--md { height: 46px; padding: 0 22px 0 18px; font-size: .93rem; }
+.dl--sm { height: 38px; padding: 0 17px 0 14px; font-size: .84rem; }
+.dl--ghost { height: 54px; padding: 0 24px 0 20px; font-size: .95rem; color: var(--ink); background: rgba(255,255,255,.03); border-color: rgba(255,255,255,.16); box-shadow: none; }
+.dl--ghost:hover { background: rgba(255,255,255,.07); box-shadow: none; }
+
+/* ---------- story column ---------- */
+.st-col { position: relative; z-index: 1; width: min(620px, 43vw); margin-left: clamp(40px, 7.5vw, 132px); }
+.st-lead { margin: 28px 0 0; max-width: 31em; font-size: clamp(1.05rem, 1.25vw, 1.2rem); line-height: 1.6; color: var(--ink-2); }
+.st-ctas { display: flex; align-items: center; gap: 22px; margin-top: 38px; flex-wrap: wrap; }
+.st-alt { color: var(--ink-2); font-size: .92rem; text-decoration: underline; text-decoration-color: rgba(255,255,255,.25); text-underline-offset: 4px; }
+.st-alt:hover { color: var(--ink); text-decoration-color: rgba(255,255,255,.6); }
+.st-trust { margin: 20px 0 0; font-size: .82rem; color: #7d7d86; letter-spacing: .01em; }
+.st-cue { position: absolute; left: 0; bottom: 34px; display: inline-flex; align-items: center; gap: 14px; color: var(--ink-3); text-decoration: none; font-size: .78rem; letter-spacing: .12em; text-transform: uppercase; }
+.st-cue i { position: relative; width: 1px; height: 38px; background: rgba(255,255,255,.12); overflow: hidden; }
+.st-cue i::after { content: ""; position: absolute; left: 0; top: -40%; width: 1px; height: 40%; background: var(--red); animation: cue 2.2s var(--ease) infinite; }
+@keyframes cue { to { top: 100%; } }
+.st-cue:hover { color: var(--ink-2); }
+
+.st-chapter { position: relative; }
+.st-beat { min-height: 84vh; display: flex; flex-direction: column; justify-content: center; }
+.st-beat:first-child { min-height: 92vh; }
+.st-h2 { font-size: clamp(2.4rem, 4.1vw, 4.2rem); }
+.st-beat .pi-lead { max-width: 26em; }
+.st-beat--mark { min-height: 100vh; }
+.st-mark { font-size: clamp(3rem, 5.4vw, 5.6rem); }
+.st-mark .pi-mask:last-child .pi-rise { color: var(--red-hi); text-shadow: 0 0 40px rgba(255,45,45,.35); }
+
+.st-block { padding: 16vh 0 6vh; }
+.st-block:first-child { padding-top: 22vh; }
+.st-mock { margin-top: 40px; }
+
+.st-final { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: 18vh 0 0; }
+.st-final .st-h2 { font-size: clamp(2.8rem, 4.8vw, 4.9rem); }
+.st-foot { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding: 14vh 0 32px; color: var(--ink-3); font-size: .8rem; }
+
+/* ---------- stage overlay (over the 3D, right side) ---------- */
+.stage-ui { position: fixed; inset: 0; z-index: 2; pointer-events: none; }
+
+.stage-cap { position: absolute; right: clamp(24px, 3vw, 48px); top: 92px; display: grid; justify-items: end; gap: 14px; text-align: right; max-width: 300px; }
+.stage-cap > * { opacity: 0; transform: translateY(8px); transition: opacity .7s var(--ease), transform .9s var(--ease); }
+.cap-marks { display: flex; align-items: center; gap: 12px; }
+.cap-marks b { font-family: var(--display); font-weight: 300; font-size: 2.3rem; font-variant-numeric: tabular-nums; color: var(--tox-hi); letter-spacing: .04em;
+  text-shadow: 0 0 22px rgba(166, 209, 58, .35); min-width: 2.2em; text-align: right; }
+.cap-marks > span { font-size: .66rem; line-height: 1.35; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-3); text-align: left; }
+.cap-heal { margin: 0; font-size: .8rem; line-height: 1.5; color: #8a8a93; }
+.stage-cap.is-intro[data-phase="done"] .cap-hint, .stage-cap.is-problem[data-phase="done"] .cap-hint,
+.stage-cap.is-intro[data-phase="running"] .cap-marks, .stage-cap.is-intro[data-phase="done"] .cap-marks,
+.stage-cap.is-problem:not([data-phase="idle"]) .cap-marks,
+.stage-cap.is-solution .cap-heal { opacity: 1; transform: none; }
+.replay { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 14px; border-radius: 999px; font: inherit; font-size: .78rem;
+  color: var(--ink-2); background: rgba(10,10,12,.5); border: 1px solid #2a2a2f; cursor: pointer; }
+.replay:hover { color: var(--ink); border-color: #45454c; }
+.replay svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.stage-cap[data-phase="done"].is-intro .replay, .stage-cap[data-phase="done"].is-problem .replay { opacity: 1; transform: none; pointer-events: auto; }
+
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@media (prefers-reduced-motion: reduce) {
+  .st-cue i::after, .intro-cue i::after, .wisp i { animation: none; }
+  .stage-cap > * { transition: none; }
+}
+
+/* ---------- React Bits pieces, styled to the page ---------- */
+.st .st-sr { margin: 0; }                                   /* ScrollReveal headings take the page type, not the demo's */
+.st .st-sr .scroll-reveal-text { font: inherit; line-height: 1.04; letter-spacing: inherit; }
+.st-beat .st-sr { max-width: 11.5em; }
+.dl-wrap { display: inline-block; }
+.nav-dl.dl-wrap { justify-self: end; }
+.st-glare { display: block; }
+.st-finalcard.spotlight-card { border-radius: 22px; }
+.st-finalcard { margin-top: 34px; padding: 26px 28px; border-radius: 24px; align-self: flex-start; }
+.st-finalcard .st-ctas { margin-top: 0; }
+.nav::before { opacity: .55; }                              /* GradualBlur does most of the work now */
+.st-glare.glare-hover { display: grid; place-items: stretch; }
+/* keep card content above the spotlight layers */
+
+/* ---------- shorter story (the punchlines live on the stage now) ---------- */
+.st-beat { min-height: 66vh; }
+.st-beat:first-child { min-height: 82vh; }
+.st-beat--quiet { min-height: 52vh; }
+.st-block { padding: 9vh 0 3vh; }
+.st-block:first-child { padding-top: 12vh; }
+.st-final { min-height: 86vh; padding-top: 10vh; }
+.st-foot { padding: 9vh 0 28px; }
+
+/* ---------- words under the lungs (right side), focus-in / blur-out crossfade ---------- */
+.stage-words { position: absolute; left: 50%; right: 0; bottom: 10.5vh; display: grid; place-items: center; padding: 0 3vw;
+}                                                           /* the right half's centre (~75%) sits under the lungs (~73.5%) */
+.stage-words p { grid-area: 1 / 1; margin: 0; white-space: nowrap; text-align: center;
+  font-family: var(--display); font-weight: 300; font-size: clamp(1.6rem, 2.3vw, 2.6rem); letter-spacing: -.02em; line-height: 1.1; color: var(--ink);
+  text-shadow: 0 2px 40px rgba(0,0,0,.9);
+  opacity: 0; filter: blur(14px); transform: translateY(14px) scale(.985);
+  transition: opacity .7s var(--ease), filter .7s var(--ease), transform .9s var(--ease); }
+.stage-words p.on { opacity: 1; filter: blur(0); transform: none; transition-duration: 1.4s, 1.4s, 1.6s; }
+.stage-words em { font-style: normal; color: var(--tox-hi); text-shadow: 0 0 34px rgba(166, 209, 58, .3), 0 2px 40px rgba(0,0,0,.9); }
+.stage-words p:last-child em { color: var(--ink-2); }
+@media (prefers-reduced-motion: reduce) { .stage-words p { transition: opacity .01s; filter: none; transform: none; } }
+
+/* ---------- cursor: detection reticle ---------- */
+.target-cursor__dot { box-shadow: 0 0 10px rgba(255, 58, 51, .55); }
+.target-cursor__label { padding: 4px 7px 3px; border-radius: 3px; background: #ff3a33; color: #0a0a0b !important;
+  font: 600 10.5px/1 ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace; letter-spacing: .04em;
+  box-shadow: 0 4px 18px rgba(255, 45, 45, .35); }
+
+/* the 3D fades in once its shaders are compiled (the page is usable before that) */
+.stage-wrap canvas { opacity: 0; transition: opacity 1.4s var(--ease); }
+.stage-wrap.is-ready canvas { opacity: 1; }
+
+/* ---------- the opening: words in a cloud ---------- */
+.st-intro { min-height: 100vh; }
+.intro { position: absolute; inset: 0; overflow: hidden; transition: opacity 1s var(--ease), visibility 0s linear 0s; }
+.intro.is-away { opacity: 0; visibility: hidden; transition: opacity .9s var(--ease), visibility 0s linear .9s; }
+/* scrolled on while the breath plays: only the chemicals stay (they ride the smoke in); the words get out of the text's way */
+.intro .intro-head, .intro .intro-foot, .intro .wisp { transition: opacity .35s var(--ease); }
+.intro.is-ahead .intro-head, .intro.is-ahead .intro-foot, .intro.is-ahead .wisp { opacity: 0; }
+.intro-head { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-54%); text-align: center;
+  font-family: var(--display); font-weight: 300; font-size: clamp(3.4rem, 7.6vw, 8.6rem); line-height: .98; letter-spacing: -.05em; color: #ececef; }
+.intro-head p { margin: 0; white-space: nowrap; }
+.intro-l1 { transform: translateX(-7%); }
+.intro-l2 { transform: translateX(7%); }
+.intro-head .ch { display: inline-block; will-change: transform, filter, opacity; text-shadow: 0 0 60px rgba(0,0,0,.55); }
+/* candy: the brand red, glossy like a sweet; lead: dull gunmetal with a cold sheen */
+.ch--candy { background: linear-gradient(180deg, #ff7a70 6%, #ff2d2d 52%, #c3111b 100%); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: none; }
+.ch--lead { background: linear-gradient(180deg, #c7ccd3 0%, #8c929a 38%, #50555c 62%, #7d838b 100%); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: none; }
+
+/* mist from the same puffs as the 3D cloud: two behind the words, two drifting in front of them */
+.wisp { position: absolute; pointer-events: none; opacity: 1; }
+.wisp i { display: block; width: 100%; height: 100%; background-image: var(--cloud); background-size: 200% 200%; background-repeat: no-repeat;
+  opacity: 0; filter: brightness(.62) blur(1.5px); transition: opacity 3s var(--ease); animation: wisp 24s ease-in-out infinite alternate; }
+.intro.has-mist .wisp i { opacity: var(--o); }
+.wisp--1 { left: -7vw; top: 30vh; width: 40vw; height: 27vw; --o: .42; }
+.wisp--1 i { background-position: 0 0; }
+.wisp--2 { right: -8vw; top: 44vh; width: 42vw; height: 28vw; --o: .4; }
+.wisp--2 i { background-position: 100% 100%; animation-duration: 31s; animation-direction: alternate-reverse; }
+.wisp--3 { left: 24vw; top: 60vh; width: 52vw; height: 32vw; --o: .55; }
+.wisp--3 i { background-position: 100% 0; animation-duration: 28s; }
+.wisp--4 { left: 26vw; top: 2vh; width: 48vw; height: 28vw; --o: .4; }
+.wisp--4 i { background-position: 0 100%; animation-duration: 35s; }
+@keyframes wisp { from { transform: translate3d(-2.5vw, 0, 0); } to { transform: translate3d(2.5vw, -1.2vh, 0); } }
+
+/* chemicals hanging in the cloud (the 3D scene moves them) */
+.chems { position: absolute; inset: 0; }
+.chem { position: absolute; left: 0; top: 0; display: flex; align-items: baseline; gap: 9px; opacity: 0; white-space: nowrap;
+  transform-origin: 0 50%; will-change: transform, opacity; }
+.chem i { align-self: center; width: 5px; height: 5px; border-radius: 50%; border: 1px solid rgba(236,236,239,.6); box-shadow: 0 0 0 4px rgba(236,236,239,.05); }
+.chem b { font-family: var(--display); font-weight: 300; font-size: 1.15rem; letter-spacing: .01em; color: #e6e6ea; }
+.chem sub { font-size: .62em; vertical-align: -.25em; line-height: 0; }
+.chem em { font: 500 .62rem/1 ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace; letter-spacing: .16em; text-transform: uppercase; color: #8d8d96; font-style: normal; }
+
+.intro-foot { position: absolute; left: clamp(24px, 3vw, 48px); right: clamp(24px, 3vw, 48px); bottom: 30px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; }
+.intro-note { grid-column: 1; margin: 0; max-width: 32em; font-size: .8rem; line-height: 1.55; color: #9a9aa3; }
+.intro-cue { grid-column: 2; }
+
+.cap-hint { margin: 0; font-size: .74rem; letter-spacing: .04em; color: #8b8b94; }
+
+/* ---------- findings: chemical markers on the poisoned lungs ---------- */
+.finds { position: absolute; inset: 0; pointer-events: none; }
+.find { position: absolute; left: 0; top: 0; width: 0; height: 0; z-index: 1; }
+.find.is-open { z-index: 3; }
+.find-pin { position: absolute; left: 0; top: 0; transform: translate(-11px, -11px) scale(.4); display: inline-flex; align-items: center; gap: 8px;
+  padding: 0; border: 0; background: none; color: #e7f5c4; font: inherit; cursor: pointer; opacity: 0; pointer-events: none;
+  transition: opacity .6s var(--ease), transform .9s var(--ease); transition-delay: calc(var(--i) * 130ms); }
+.find-pin i { position: relative; flex: none; width: 22px; height: 22px; border-radius: 50%; border: 1px solid rgba(195,239,78,.75);
+  background: radial-gradient(circle, rgba(195,239,78,.95) 0 3px, rgba(195,239,78,.12) 4px 100%); box-shadow: 0 0 16px rgba(166,209,58,.4); }
+.find-pin i::after { content: ""; position: absolute; inset: -1px; border-radius: 50%; border: 1px solid rgba(195,239,78,.6); animation: find-ping 2.6s var(--ease) infinite; animation-delay: calc(var(--i) * 300ms); }
+@keyframes find-ping { 0% { transform: scale(1); opacity: .8; } 70%, 100% { transform: scale(2.4); opacity: 0; } }
+.find-pin > span { font-family: var(--display); font-weight: 300; font-size: .95rem; letter-spacing: .01em; padding: 3px 9px 4px; border-radius: 999px;
+  background: rgba(8,10,4,.72); border: 1px solid rgba(195,239,78,.22); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); white-space: nowrap; }
+.find-pin sub, .find-top sub { font-size: .62em; vertical-align: -.25em; line-height: 0; }
+.find-pin:focus-visible { outline: none; }
+.find-pin:focus-visible i { outline: 2px solid var(--tox-hi); outline-offset: 3px; }
+.finds.is-on .find-pin { opacity: 1; transform: translate(-11px, -11px) scale(1); pointer-events: auto; }
+.find.is-open .find-pin > span { border-color: rgba(195,239,78,.6); }
+
+.find-card { position: absolute; width: 300px; padding: 16px 18px 17px; border-radius: 16px; pointer-events: none;
+  background: linear-gradient(160deg, rgba(166,209,58,.1), rgba(166,209,58,0) 55%), rgba(9,10,8,.9); border: 1px solid rgba(195,239,78,.26);
+  box-shadow: 0 20px 60px rgba(0,0,0,.6), 0 0 40px rgba(166,209,58,.08); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  opacity: 0; transform: translateY(6px) scale(.97); transition: opacity .35s var(--ease), transform .5s var(--ease); }
+.find.is-open .find-card { opacity: 1; transform: none; pointer-events: auto; }
+.find[data-v="u"] .find-card { bottom: 24px; }
+.find[data-v="d"] .find-card { top: 24px; }
+.find[data-h="r"] .find-card { left: -20px; }
+.find[data-h="l"] .find-card { right: -20px; }
+.find[data-h="c"] .find-card { left: -150px; }
+.find-card p { margin: 0; }
+.find-top { display: flex; align-items: baseline; gap: 10px; }
+.find-top b { font-family: var(--display); font-weight: 300; font-size: 1.7rem; letter-spacing: -.01em; color: var(--tox-hi); }
+.find-top > span { font-size: .74rem; letter-spacing: .18em; text-transform: uppercase; color: var(--ink); }
+.find-iupac { margin-top: 8px !important; font: 500 .72rem/1.45 ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace; color: #a3a3ac; overflow-wrap: anywhere; }
+.find-iupac em { font-style: normal; margin-right: 8px; padding: 1px 5px; border-radius: 3px; background: rgba(255,255,255,.07); color: #77777f; font-size: .62rem; letter-spacing: .12em; }
+.find-line { margin-top: 13px !important; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.08);
+  font-family: var(--display); font-weight: 300; font-size: 1.12rem; line-height: 1.32; letter-spacing: -.01em; color: #f1f1f3; }
+@media (prefers-reduced-motion: reduce) { .find-pin, .find-card { transition: opacity .01s; } .find-pin i::after { animation: none; } }
+
+/* ---------- the landing: wordmark, one line, a big "Scroll to breathe in" ---------- */
+.landing { position: absolute; inset: 0; display: grid; place-items: center; transition: visibility 0s linear 0s; }
+.landing.is-away { visibility: hidden; transition: visibility 0s linear .6s; }
+.landing-in { text-align: center; margin-top: -6vh; }
+/* load-in on the children: the scroll fade (GSAP) owns .landing-in / .landing-cue themselves */
+.landing-mark, .landing-sub { animation: land-in 1.8s var(--ease) both .15s; }
+.landing-sub { animation-delay: .5s; }
+.landing-cue > * { animation: land-in 1.6s var(--ease) both .9s; }
+.landing-mark { margin: 0; font-family: var(--display); font-weight: 300; font-size: clamp(4.2rem, 8.6vw, 10.5rem); line-height: 1;
+  letter-spacing: .3em; margin-right: -.3em; color: #f1f1f3; }            /* margin: the trailing tracking, so it centres */
+.landing-mark span { color: var(--red); }
+.landing-sub { margin: 3.2vh 0 0; font-size: clamp(1.15rem, 1.45vw, 1.6rem); font-weight: 400; letter-spacing: .005em; color: #9d9da6; }
+.landing-cue { position: absolute; left: 0; right: 0; bottom: 7vh; width: max-content; margin: 0 auto; }
+@keyframes land-in { from { opacity: 0; filter: blur(14px); } to { opacity: 1; filter: blur(0); } }
+.nav .wordmark { transition: opacity .6s var(--ease); }
+.nav.is-landing .wordmark { opacity: 0; pointer-events: none; }
+
+/* the cue on the landing and on the candy screen: a pill that breathes, and a red line drawing down */
+.breathe-cue { display: grid; justify-items: center; gap: 14px; text-decoration: none; pointer-events: auto; }
+.breathe-cue span { padding: 13px 26px 13px 28px; border-radius: 999px; border: 1px solid rgba(255,255,255,.22); background: rgba(255,255,255,.04);
+  font-size: .9rem; font-weight: 600; letter-spacing: .3em; text-transform: uppercase; color: #f1f1f3;
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); animation: breathe 4.4s ease-in-out infinite;
+  transition: border-color .3s, background .3s; }
+.breathe-cue:hover span { border-color: rgba(255,255,255,.5); background: rgba(255,255,255,.08); }
+.breathe-cue i { position: relative; width: 2px; height: 54px; border-radius: 2px; background: rgba(255,255,255,.1); overflow: hidden; }
+.breathe-cue i::after { content: ""; position: absolute; left: 0; top: -45%; width: 2px; height: 45%; background: var(--red); box-shadow: 0 0 10px var(--red);
+  animation: cue 2.2s var(--ease) infinite; }
+.landing-cue > span { animation: land-in 1.6s var(--ease) both .9s, breathe 4.4s ease-in-out 2.5s infinite; }
+@keyframes breathe { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); } 50% { box-shadow: 0 0 34px 2px rgba(255,255,255,.1); border-color: rgba(255,255,255,.34); } }
+@media (prefers-reduced-motion: reduce) { .breathe-cue span, .breathe-cue i::after, .landing-mark, .landing-sub, .landing-cue > *, .landing-cue > span { animation: none; } }
+
+/* candy screen: says what the cloud is */
+.intro-head .intro-eyebrow { display: inline-flex; align-items: center; gap: 10px; margin: 0 0 3.4vh; padding: 8px 16px 8px 13px; border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.16); background: rgba(10,10,12,.45); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  font-family: var(--font); font-size: .82rem; font-weight: 600; line-height: 1; letter-spacing: .2em; text-transform: uppercase; color: #e4e4e7; white-space: nowrap; }
+.intro-eyebrow i { width: 7px; height: 7px; border-radius: 50%; background: var(--red); box-shadow: 0 0 10px var(--red); }
+
+/* ---------- labels on the 3D: "Vape aerosol" (windpipe), "Your lungs" ---------- */
+.callouts { position: absolute; inset: 0; pointer-events: none; }
+.callout { position: absolute; left: 0; top: 0; width: 0; height: 0; opacity: 0; transition: opacity .8s var(--ease); }
+.callout.is-on { opacity: 1; transition-delay: 1.2s; }
+.callout-dot { position: absolute; left: -4px; top: -4px; width: 8px; height: 8px; border-radius: 50%; background: #f1f1f3; box-shadow: 0 0 0 4px rgba(241,241,243,.12), 0 0 12px rgba(241,241,243,.4); }
+/* labels point right, away from the story column (bigger text on the left would run into them) */
+.callout-line { position: absolute; left: 10px; top: 0; width: 46px; height: 1px; background: linear-gradient(270deg, rgba(241,241,243,0), rgba(241,241,243,.7)); }
+.callout-tag { position: absolute; left: 64px; top: 0; transform: translateY(-50%); display: grid; justify-items: start; gap: 5px; text-align: left; white-space: nowrap; }
+.callout-tag b { font-size: .8rem; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: #f1f1f3; text-shadow: 0 2px 18px rgba(0,0,0,.9); }
+.callout-tag em { font-style: normal; font-size: .82rem; color: #a1a1aa; text-shadow: 0 2px 18px rgba(0,0,0,.9); }
+@media (prefers-reduced-motion: reduce) { .callout { transition: none; } }
+
+/* ---------- bigger story column (RJ 2026-11-11: "make the text on the left side bigger") ---------- */
+.st-col { width: min(700px, 45vw); }
+.st-h2 { font-size: clamp(2.9rem, 5.1vw, 5.5rem); }
+.st-final .st-h2 { font-size: clamp(3.1rem, 5.5vw, 6rem); }
+.st .pi-lead, .st .st-lead { font-size: clamp(1.15rem, 1.6vw, 1.5rem); line-height: 1.55; }
+.st .pi-eyebrow { font-size: 13px; }
+.st .pi-points { font-size: 1.12em; }
+.st .pi-fine, .st .st-trust { font-size: .92rem; }
+/* more room per beat: the breath + poison play over this scroll, so a steady scroll gives a steady story */
+.st-beat { min-height: 92vh; }
+.st-beat:first-child { min-height: 108vh; }
+
+/* the real app screenshot + one privacy line (RJ 2026-11-11: the small print was a waste) */
+.st-shot { display: block; width: 100%; height: auto; border-radius: 18px; box-shadow: 0 30px 80px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.07); }
+.st-private { display: flex; align-items: center; gap: 12px; margin: 28px 0 0; font-size: clamp(1rem, 1.25vw, 1.15rem); color: var(--ink-2); }
+.st-private i { flex: none; width: 8px; height: 8px; border-radius: 50%; background: #f1f1f3; box-shadow: 0 0 0 4px rgba(241,241,243,.12); }

@@ -1,0 +1,18 @@
+/* From React Bits (https://reactbits.dev, github.com/DavidHDev/react-bits), copied in as the library intends.
+   Copyright (c) 2026 David Haz. MIT + Commons Clause: free to use in this website; the component itself may not be
+   sold or redistributed on its own. Full licence: https://github.com/DavidHDev/react-bits/blob/main/LICENSE.md */
+.scroll-reveal {
+  margin: 20px 0;
+}
+
+.scroll-reveal-text {
+  display: block;
+  font-size: clamp(1.6rem, 4vw, 3rem);
+  line-height: 1.5;
+  font-weight: 600;
+}
+
+.scroll-reveal-word,
+.scroll-reveal-piece {
+  display: inline-block;
+}

@@ -1,0 +1,6 @@
+/* From React Bits (https://reactbits.dev, github.com/DavidHDev/react-bits), copied in as the library intends.
+   Copyright (c) 2026 David Haz. MIT + Commons Clause: free to use in this website; the component itself may not be
+   sold or redistributed on its own. Full licence: https://github.com/DavidHDev/react-bits/blob/main/LICENSE.md */
+.gradual-blur {
+  pointer-events: none;
+}

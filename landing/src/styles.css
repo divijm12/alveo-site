@@ -1,0 +1,14 @@
+@font-face { font-family: "Sora"; src: url("/fonts/sora-300-latin.woff2") format("woff2"); font-weight: 300; font-style: normal; font-display: swap; }
+:root {
+  color-scheme: dark;
+  --bg: #000; --ink: #f4f4f5; --ink-2: #a1a1aa; --ink-3: #52525b; --line: #1f1f23;
+  --red: #ff2d2d; --red-hi: #ff3a33; --red-lo: #8e0a15;
+  --tox: #a6d13a; --tox-hi: #c3ef4e;   /* the poison: a sallow acid green, used sparingly */
+  --ease: cubic-bezier(.16, 1, .3, 1);
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable Display", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --display: "Sora", var(--font);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); -webkit-font-smoothing: antialiased; }
+body { overflow-x: hidden; }
+
