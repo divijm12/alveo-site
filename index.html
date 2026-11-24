@@ -86,6 +86,12 @@
   .beta a:focus-visible { outline: 2px solid #ff2d2d; outline-offset: 3px; border-radius: 2px; }
   .hint { font-size: .8rem; letter-spacing: .04em; color: var(--ink-3); animation-delay: 2.4s; transition: color .4s; }
   .hint.on { color: var(--ink-2); }
+  .phone-note { display: none; font-size: .92rem; color: var(--ink); margin: 4px 0 -4px; animation-delay: 1.75s; }
+  @media (hover: none) and (pointer: coarse) {
+    .phone-note { display: block; }
+    .mark { width: min(clamp(110px, 28vw, 170px), 20svh * 594 / 715); }
+    .stage { gap: 16px; }
+  }
   @media (max-width: 420px) { form { flex-direction: column; } form input { flex: none; } form button { width: 100%; }
     .soon { font-size: .66rem; letter-spacing: .07em; padding: 7px 12px; gap: .35em; } }
   @keyframes draw { to { stroke-dashoffset: 0; } }
@@ -116,6 +122,7 @@
   <p>An app that notices when you vape at your desk and gives you a plan to cut down.</p>
   <p class="caveat">Runs on your computer<span class="sep" aria-hidden="true"> · </span>Can miss some puffs</p>
   <span class="soon">Coming soon to <span class="os"><svg class="os-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg>Mac</span></span>
+  <p class="phone-note">Alveo is a Mac app. On your phone? Leave your email and we'll let you know when it launches.</p>
   <form id="notify" novalidate>
     <label for="email" class="sr">Email address</label>
     <input id="email" name="email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com" required>
@@ -144,6 +151,7 @@
   const PUBLIC_KEY = "sb_publishable_MnBSSqGJj6A3i-SoFtlRBg_y01qONHP";        // publishable key: meant to be public
   const form = document.getElementById("notify"), note = document.getElementById("note"), email = document.getElementById("email");
   const btn = document.getElementById("notify-btn"), loadedAt = Date.now();
+  const PHONE = matchMedia("(hover: none) and (pointer: coarse)");           // phones/tablets: Alveo needs a Mac, so tag these signups "mobile"
   const say = (text, cls) => { note.textContent = text; note.className = "note " + (cls || ""); };
   if (form) form.addEventListener("submit", async e => {
     e.preventDefault();
@@ -154,7 +162,7 @@
     try {
       const r = await fetch(WAITLIST, { method: "POST",
         headers: { apikey: PUBLIC_KEY, "Content-Type": "application/json", Prefer: "return=minimal" },
-        body: JSON.stringify({ email: email.value.trim(), source: "site" }) });
+        body: JSON.stringify({ email: email.value.trim(), source: PHONE.matches ? "mobile" : "site" }) });
       if (r.status === 201 || r.status === 409) return done();                  // 409 = already on the list: same answer
       say(r.status === 400 ? "That email address doesn't look right. Please check it." : "Something went wrong. Please try again.", "err");
     } catch { say("Couldn't reach the server. Check your connection and try again.", "err"); }
